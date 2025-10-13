@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Epoch {
+  id              String   @id // Sequential ID: 1, 2, 3, ...
+  name            String   @db.VarChar(255)
+  description     String?  @db.Text
+  tokenAddress    String   @db.VarChar(42) // Ethereum address
+  totalAllocation String   @db.VarChar(78) // Large number as string
+  claimDeadline   String   @db.VarChar(20) // Unix timestamp as string
+  merkleRoot      String   @db.VarChar(66) // Root hash
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  claims MerkleUserClaims[]
+
+  @@index([isActive])
+  @@index([tokenAddress])
+}
+
+model MerkleUserClaims {
+  id         String   @id @default(cuid())
+  address    String   @db.VarChar(42) // Ethereum address length
+  amount     String   @db.VarChar(78) // Large number as string
+  proof      String   @db.VarChar(66) // Hash length
+  merkleRoot String   @db.VarChar(66) // Root hash
+  epochId    String // Foreign key to Epoch
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  epoch Epoch @relation(fields: [epochId], references: [id], onDelete: Cascade)
+
+  @@unique([address, epochId]) // Prevent duplicate claims for same epoch
+  @@index([address])
+  @@index([merkleRoot])
+  @@index([epochId])
+}
