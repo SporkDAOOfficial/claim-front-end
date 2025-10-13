@@ -24,7 +24,7 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 const rainbowKitTheme: Theme = darkTheme({
-  accentColor: "#1ca9c9",
+  accentColor: "#A3CFFF",
   accentColorForeground: "black",
 });
 

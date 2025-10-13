@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { FaOctopusDeploy } from "react-icons/fa";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
-import { ADMIN_ADDRESSES } from "@/utils/consts";
+import { isAdmin } from "@/utils/functions";
 
 const NavBar = () => {
   const router = useRouter();
@@ -28,7 +28,7 @@ const NavBar = () => {
         >
           <Icon
             size="xl"
-            color={router.pathname === "/" ? "cyan.300" : undefined}
+            color={router.pathname === "/" ? "blue.300" : undefined}
           >
             <FaOctopusDeploy />
           </Icon>
@@ -37,20 +37,25 @@ const NavBar = () => {
 
       <Stack direction="row" alignItems="center" gap="2rem">
         <Link href="/claim">
-          <Text _hover={{ textDecoration: "underline" }} fontWeight="bold">
+          <Text
+            _hover={{ textDecoration: "underline" }}
+            fontWeight="bold"
+            color={router.pathname === "/claim" ? "blue.300" : undefined}
+          >
             Claim
           </Text>
         </Link>
-        {address &&
-          ADMIN_ADDRESSES.some(
-            (admin) => admin.toLowerCase() === address.toLowerCase()
-          ) && (
-            <Link href="/admin">
-              <Text _hover={{ textDecoration: "underline" }} fontWeight="bold">
-                Admin
-              </Text>
-            </Link>
-          )}
+        {address && isAdmin(address) && (
+          <Link href="/admin">
+            <Text
+              _hover={{ textDecoration: "underline" }}
+              fontWeight="bold"
+              color={router.pathname === "/admin" ? "blue.300" : undefined}
+            >
+              Admin
+            </Text>
+          </Link>
+        )}
         <ConnectButton />
         <ColorModeButton />
       </Stack>
