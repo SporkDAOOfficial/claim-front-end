@@ -1,15 +1,24 @@
-import { Button, Flex, SimpleGrid, Stack, Text } from "@chakra-ui/react";
+import {
+  Button,
+  Flex,
+  SimpleGrid,
+  Spinner,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { ClaimWithEpoch } from "../api/claims";
 
 const Claim = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [claims, setClaims] = useState<ClaimWithEpoch[]>([]);
   const { address } = useAccount();
 
   useEffect(() => {
     const fetchClaims = async () => {
       try {
+        setIsLoading(true);
         console.log(
           "Fetching claims for address:",
           address?.toLowerCase() ?? ""
@@ -35,6 +44,8 @@ const Claim = () => {
         }
       } catch (error) {
         console.error("Error calling claims API:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -42,12 +53,24 @@ const Claim = () => {
     fetchClaims();
   }, [address]);
 
+  if (isLoading) {
+    return (
+      <Stack h="80vh" justifyContent="center" alignItems="center" mt="1rem">
+        <Spinner size="xl" />
+      </Stack>
+    );
+  }
+
   if (claims.length === 0) {
-    return <Text>No claims found for this address.</Text>;
+    return (
+      <Stack h="80vh" justifyContent="center" alignItems="center" mt="1rem">
+        <Text>No claims found for this address.</Text>
+      </Stack>
+    );
   }
 
   return (
-    <SimpleGrid gap="1rem" columns={2} p="1rem">
+    <SimpleGrid gap="1rem" columns={2} mt="1rem">
       {claims.map((claim) => (
         <Stack
           key={claim.id}
@@ -71,7 +94,7 @@ const Claim = () => {
           <Text>Merkle Root: {claim.merkleRoot}</Text>
           <Text>Created: {new Date(claim.createdAt).toLocaleString()}</Text>
           <Flex justifyContent="flex-end">
-            <Button>Claim</Button>
+            <Button size="sm">Claim</Button>
           </Flex>
         </Stack>
       ))}
