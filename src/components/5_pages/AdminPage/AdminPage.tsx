@@ -15,7 +15,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toaster } from "@/components/ui/toaster";
 import { useAccount, useSignMessage } from "wagmi";
-import { isAdmin } from "@/utils/functions";
+import { formatNumber, isAdmin } from "@/utils/functions";
 import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
 
 interface Epoch {
@@ -189,17 +189,39 @@ const AdminPage = () => {
       <Heading>Create Epoch</Heading>
       <Stack
         border="1px solid"
-        bg="bg.panel"
+        borderColor="fg.subtle"
         fontSize="sm"
         p="1rem"
         rounded="md"
-        w="30%"
-        gap="1rem"
+        gap="2rem"
+        direction="row"
+        w={file ? "60rem" : "30rem"}
+        h="22rem"
       >
-        <Stack>
-          <Text>Upload CSV</Text>
+        <Stack gap="2rem" w="30rem">
+          <Stack gap="0.5rem">
+            <Text fontWeight="semibold">Upload CSV</Text>
+            <Text fontSize="xs" color="fg.muted">
+              Upload a CSV file to create a new airdrop epoch. This will
+              generate a Merkle tree for efficient on-chain verification and
+              allow eligible users to claim their tokens.
+            </Text>
+            <Text fontSize="xs" color="fg.muted" mt="0.5rem">
+              <strong>CSV Format Requirements:</strong>
+            </Text>
+            <Text fontSize="xs" color="fg.muted" ml="1rem">
+              • <strong>address:</strong> Ethereum wallet address (0x format)
+            </Text>
+            <Text fontSize="xs" color="fg.muted" ml="1rem">
+              • <strong>amount:</strong> Token amount in wei (smallest unit)
+            </Text>
+          </Stack>
           <Flex>
-            <FileUpload.Root key={uploadKey} onFileChange={handleFileChange}>
+            <FileUpload.Root
+              key={uploadKey}
+              onFileChange={handleFileChange}
+              colorPalette="blue"
+            >
               <FileUpload.HiddenInput />
               <FileUpload.Trigger asChild>
                 <Button variant="outline" size="sm">
@@ -211,30 +233,34 @@ const AdminPage = () => {
           </Flex>
         </Stack>
         {file && (
-          <Stack gap="1rem">
-            <Separator />
+          <Stack gap="2rem" w="30rem" justifyContent="space-between">
             <Stack gap="1rem">
               <Field.Root>
                 <Field.Label>Token Address</Field.Label>
                 <Input
-                  placeholder="0x5432g890..."
+                  size="sm"
+                  placeholder="0xdAC17F958D2ee523a2206206994597C13D831ec7"
                   {...register("tokenAddress")}
                 />
               </Field.Root>
               <Field.Root>
                 <Field.Label>Total Allocation</Field.Label>
-                <Input placeholder="12000" {...register("totalAllocation")} />
+                <Input
+                  size="sm"
+                  placeholder="12000"
+                  {...register("totalAllocation")}
+                />
               </Field.Root>
               <Field.Root>
                 <Field.Label>Claim Deadline</Field.Label>
                 <Input
+                  size="sm"
                   placeholder="2025-01-01T12:00"
                   type="datetime-local"
                   {...register("claimDeadline")}
                 />
               </Field.Root>
             </Stack>
-            <Separator />
             <Flex justifyContent="flex-end">
               <Button
                 onClick={handleSubmit}
@@ -246,6 +272,8 @@ const AdminPage = () => {
                   watch("totalAllocation") === "" ||
                   watch("claimDeadline") === ""
                 }
+                size="sm"
+                colorPalette="blue"
               >
                 Submit
               </Button>
@@ -281,7 +309,7 @@ const AdminPage = () => {
                     {epoch.tokenAddress.slice(0, 6)}...
                     {epoch.tokenAddress.slice(-4)}
                   </Table.Cell>
-                  <Table.Cell>{epoch.totalAllocation}</Table.Cell>
+                  <Table.Cell>{formatNumber(epoch.totalAllocation)}</Table.Cell>
                   <Table.Cell>
                     {new Date(
                       parseInt(epoch.claimDeadline) * 1000

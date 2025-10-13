@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { ClaimWithEpoch } from "@/pages/api/claims";
 import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
+import { formatNumber } from "@/utils/functions";
 
 const ClaimPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -90,7 +91,7 @@ const ClaimPage = () => {
                 {claim.epoch.tokenAddress.slice(0, 6)}...
                 {claim.epoch.tokenAddress.slice(-4)}
               </Table.Cell>
-              <Table.Cell>{claim.amount}</Table.Cell>
+              <Table.Cell>{formatNumber(claim.amount)}</Table.Cell>
               <Table.Cell>
                 {new Date(
                   parseInt(claim.epoch.claimDeadline) * 1000
