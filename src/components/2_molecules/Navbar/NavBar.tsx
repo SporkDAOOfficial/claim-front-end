@@ -3,6 +3,7 @@ import { Icon, Stack } from "@chakra-ui/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaOctopusDeploy } from "react-icons/fa";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const NavBar = () => {
   const router = useRouter();
@@ -26,6 +27,7 @@ const NavBar = () => {
         </Stack>
       </Link>
       <Stack direction="row" alignItems="center" gap="2rem">
+        <ConnectButton />
         <ColorModeButton />
       </Stack>
     </Stack>
