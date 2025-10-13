@@ -8,18 +8,35 @@ import {
   Separator,
   Stack,
   Text,
+  Table,
 } from "@chakra-ui/react";
 import { HiUpload } from "react-icons/hi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toaster } from "@/components/ui/toaster";
 import { useAccount, useSignMessage } from "wagmi";
 import { isAdmin } from "@/utils/functions";
+import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
+
+interface Epoch {
+  id: number;
+  name: string;
+  description: string;
+  tokenAddress: string;
+  totalAllocation: string;
+  claimDeadline: string;
+  merkleRoot: string;
+  isActive: boolean;
+  createdAt: string;
+  claimsCount: number;
+}
 
 const AdminPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploadKey, setUploadKey] = useState(0);
+  const [epochs, setEpochs] = useState<Epoch[]>([]);
+  const [loadingEpochs, setLoadingEpochs] = useState(false);
 
   const { register, watch, reset } = useForm();
   const { address, isConnected } = useAccount();
@@ -29,6 +46,29 @@ const AdminPage = () => {
     const newFile = details.acceptedFiles[0] || null;
     setFile(newFile);
   };
+
+  const fetchEpochs = async () => {
+    setLoadingEpochs(true);
+    try {
+      const response = await fetch("/api/epochs");
+      const result = await response.json();
+      if (response.ok) {
+        setEpochs(result.epochs);
+      } else {
+        console.error("Error fetching epochs:", result.error);
+      }
+    } catch (error) {
+      console.error("Error calling epochs API:", error);
+    } finally {
+      setLoadingEpochs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (address && isAdmin(address)) {
+      fetchEpochs();
+    }
+  }, [address]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -116,6 +156,9 @@ const AdminPage = () => {
           totalAllocation: "",
           claimDeadline: "",
         });
+
+        // Refresh epochs list
+        fetchEpochs();
       } catch (error) {
         console.error("Error uploading file:", error);
         toaster.create({
@@ -137,10 +180,13 @@ const AdminPage = () => {
     return <></>;
   }
 
+  if (loadingEpochs) {
+    return <LoadingPage />;
+  }
+
   return (
-    <Stack mt="1rem" gap="1rem">
-      <Heading>Admin</Heading>
-      <Separator />
+    <Stack gap="2rem">
+      <Heading>Create Epoch</Heading>
       <Stack
         border="1px solid"
         bg="bg.panel"
@@ -150,10 +196,6 @@ const AdminPage = () => {
         w="30%"
         gap="1rem"
       >
-        <Stack>
-          <Heading>Create Epoch</Heading>
-        </Stack>
-        <Separator />
         <Stack>
           <Text>Upload CSV</Text>
           <Flex>
@@ -209,6 +251,55 @@ const AdminPage = () => {
               </Button>
             </Flex>
           </Stack>
+        )}
+      </Stack>
+      <Separator />
+      <Stack gap="1rem">
+        <Heading>Created Epochs</Heading>
+        {loadingEpochs ? (
+          <Text>Loading epochs...</Text>
+        ) : (
+          <Table.Root size="sm">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader>ID</Table.ColumnHeader>
+                <Table.ColumnHeader>Name</Table.ColumnHeader>
+                <Table.ColumnHeader>Token Address</Table.ColumnHeader>
+                <Table.ColumnHeader>Total Allocation</Table.ColumnHeader>
+                <Table.ColumnHeader>Claim Deadline</Table.ColumnHeader>
+                <Table.ColumnHeader>Claims Count</Table.ColumnHeader>
+                <Table.ColumnHeader>Status</Table.ColumnHeader>
+                <Table.ColumnHeader>Created</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {epochs.map((epoch) => (
+                <Table.Row key={epoch.id}>
+                  <Table.Cell>{epoch.id}</Table.Cell>
+                  <Table.Cell>{epoch.name}</Table.Cell>
+                  <Table.Cell fontFamily="mono" fontSize="xs">
+                    {epoch.tokenAddress.slice(0, 6)}...
+                    {epoch.tokenAddress.slice(-4)}
+                  </Table.Cell>
+                  <Table.Cell>{epoch.totalAllocation}</Table.Cell>
+                  <Table.Cell>
+                    {new Date(
+                      parseInt(epoch.claimDeadline) * 1000
+                    ).toLocaleDateString()}
+                  </Table.Cell>
+                  <Table.Cell>{epoch.claimsCount}</Table.Cell>
+                  <Table.Cell>
+                    <Text color={epoch.isActive ? "green.500" : "red.500"}>
+                      {epoch.isActive ? "Active" : "Inactive"}
+                    </Text>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {new Date(epoch.createdAt).toLocaleDateString()}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table.Root>
         )}
       </Stack>
     </Stack>
