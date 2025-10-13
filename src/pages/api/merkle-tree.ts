@@ -97,7 +97,7 @@ function parseCSV(csvContent: string): ClaimData[] {
     const [address, amount] = line.split(",");
     if (address && amount) {
       claims.push({
-        address: address.trim(),
+        address: address.trim().toLowerCase(), // Convert to lowercase
         amount: amount.trim(),
         proof: "", // Will be populated during Merkle tree generation
       });
@@ -179,7 +179,7 @@ async function saveClaimsToDatabase(
   epochId: string
 ) {
   const claimsData = claims.map((claim) => ({
-    address: claim.address,
+    address: claim.address.toLowerCase(), // Ensure lowercase in database
     amount: claim.amount,
     proof: claim.proof,
     merkleRoot: merkleRoot,
