@@ -108,49 +108,13 @@ function parseCSV(csvContent: string): ClaimData[] {
 }
 
 /**
- * Get the next sequential ID for epoch creation
- * TODO: Replace with smart contract call in the future
- */
-async function getNextEpochId(): Promise<string> {
-  try {
-    // Query database for the highest existing ID
-    const lastEpoch = await prisma.epoch.findFirst({
-      orderBy: { id: "desc" },
-      select: { id: true },
-    });
-
-    // If no epochs exist, start with ID 1
-    if (!lastEpoch) {
-      console.log("No existing epochs found, starting with ID 1");
-      return "1";
-    }
-
-    // Increment the last ID by 1
-    const nextId = (parseInt(lastEpoch.id) + 1).toString();
-    console.log(
-      `Generated next epoch ID: ${nextId} (previous: ${lastEpoch.id})`
-    );
-
-    return nextId;
-  } catch (error) {
-    console.error("Error getting next epoch ID:", error);
-    // Fallback to ID 1 if there's an error
-    return "1";
-  }
-}
-
-/**
  * Create a new epoch with form data
  */
 async function createEpoch(epochData: EpochData) {
-  // Get the next sequential ID (placeholder for future smart contract integration)
-  const nextId = await getNextEpochId();
-
   return await prisma.epoch.create({
     data: {
-      id: nextId,
-      name: `Epoch ${nextId}`,
-      description: `Epoch ${nextId} - Token: ${epochData.tokenAddress}`,
+      name: "Epoch", // Will be updated with actual ID after creation
+      description: `Token: ${epochData.tokenAddress}`,
       tokenAddress: epochData.tokenAddress,
       totalAllocation: epochData.totalAllocation,
       claimDeadline: epochData.claimDeadline,
@@ -161,12 +125,20 @@ async function createEpoch(epochData: EpochData) {
 }
 
 /**
- * Update epoch with Merkle root
+ * Update epoch with Merkle root and proper name
  */
-async function updateEpochWithMerkleRoot(epochId: string, merkleRoot: string) {
+async function updateEpochWithMerkleRoot(
+  epochId: number,
+  merkleRoot: string,
+  tokenAddress: string
+) {
   return await prisma.epoch.update({
     where: { id: epochId },
-    data: { merkleRoot },
+    data: {
+      merkleRoot,
+      name: `Epoch ${epochId}`,
+      description: `Epoch ${epochId} - Token: ${tokenAddress}`,
+    },
   });
 }
 
@@ -176,7 +148,7 @@ async function updateEpochWithMerkleRoot(epochId: string, merkleRoot: string) {
 async function saveClaimsToDatabase(
   claims: ClaimData[],
   merkleRoot: string,
-  epochId: string
+  epochId: number
 ) {
   const claimsData = claims.map((claim) => ({
     address: claim.address.toLowerCase(), // Ensure lowercase in database
@@ -284,7 +256,8 @@ export default async function handler(
     // Update epoch with Merkle root
     const updatedEpoch = await updateEpochWithMerkleRoot(
       epoch.id,
-      merkleTreeData.root
+      merkleTreeData.root,
+      tokenAddress
     );
     console.log("Epoch updated with Merkle root");
 

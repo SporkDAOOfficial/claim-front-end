@@ -15,7 +15,7 @@ datasource db {
 }
 
 model Epoch {
-  id              String   @id // Sequential ID: 1, 2, 3, ...
+  id              Int      @id @default(autoincrement()) // Auto-incremental ID: 1, 2, 3, ...
   name            String   @db.VarChar(255)
   description     String?  @db.Text
   tokenAddress    String   @db.VarChar(42) // Ethereum address
@@ -39,7 +39,7 @@ model MerkleUserClaims {
   amount     String   @db.VarChar(78) // Large number as string
   proof      String   @db.VarChar(66) // Hash length
   merkleRoot String   @db.VarChar(66) // Root hash
-  epochId    String // Foreign key to Epoch
+  epochId    Int // Foreign key to Epoch
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

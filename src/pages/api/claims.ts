@@ -8,10 +8,10 @@ export interface ClaimWithEpoch {
   amount: string;
   proof: string;
   merkleRoot: string;
-  epochId: string;
+  epochId: number;
   createdAt: string;
   epoch: {
-    id: string;
+    id: number;
     name: string;
     description: string;
     tokenAddress: string;
