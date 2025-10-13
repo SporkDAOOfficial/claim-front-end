@@ -2,8 +2,9 @@ import { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import fs from "fs";
 import { MerkleTree } from "merkletreejs";
-import { keccak256 } from "viem";
+import { keccak256, verifyMessage } from "viem";
 import { prisma } from "../../lib/prisma";
+import { ADMIN_ADDRESSES } from "@/utils/consts";
 
 export interface ClaimData {
   address: string;
@@ -28,6 +29,45 @@ export const config = {
     bodyParser: false,
   },
 };
+
+/**
+ * Verify signature and check if address is in admin whitelist
+ */
+async function verifyAdminSignature(
+  address: string,
+  message: string,
+  signature: string
+): Promise<boolean> {
+  try {
+    // Verify the signature
+    const isValidSignature = await verifyMessage({
+      address: address as `0x${string}`,
+      message,
+      signature: signature as `0x${string}`,
+    });
+
+    // Check if the signature is valid
+    if (!isValidSignature) {
+      console.log("Signature verification failed: invalid signature");
+      return false;
+    }
+
+    // Check if address is in admin whitelist
+    const isAdmin = ADMIN_ADDRESSES.some(
+      (adminAddr) => adminAddr.toLowerCase() === address.toLowerCase()
+    );
+
+    if (!isAdmin) {
+      console.log(`Address ${address} is not in admin whitelist`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error verifying signature:", error);
+    return false;
+  }
+}
 
 /**
  * Generate proof hash for a single claim
@@ -208,6 +248,15 @@ export default async function handler(
     const claimDeadline = Array.isArray(fields.claimDeadline)
       ? fields.claimDeadline[0]
       : fields.claimDeadline;
+    const signature = Array.isArray(fields.signature)
+      ? fields.signature[0]
+      : fields.signature;
+    const address = Array.isArray(fields.address)
+      ? fields.address[0]
+      : fields.address;
+    const message = Array.isArray(fields.message)
+      ? fields.message[0]
+      : fields.message;
 
     if (!tokenAddress || !totalAllocation || !claimDeadline) {
       return res.status(400).json({
@@ -215,6 +264,26 @@ export default async function handler(
           "Missing required fields: tokenAddress, totalAllocation, claimDeadline",
       });
     }
+
+    if (!signature || !address || !message) {
+      return res.status(400).json({
+        error: "Missing signature verification data",
+      });
+    }
+
+    // Verify admin signature
+    const isValidAdmin = await verifyAdminSignature(
+      address,
+      message,
+      signature
+    );
+    if (!isValidAdmin) {
+      return res.status(403).json({
+        error: "Unauthorized: Invalid signature or not an admin",
+      });
+    }
+
+    console.log(`Admin ${address} verified successfully`);
 
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
 

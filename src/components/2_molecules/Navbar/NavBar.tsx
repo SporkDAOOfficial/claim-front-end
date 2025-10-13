@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaOctopusDeploy } from "react-icons/fa";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useAccount } from "wagmi";
+import { ADMIN_ADDRESSES } from "@/utils/consts";
 
 const NavBar = () => {
   const router = useRouter();
+  const { address } = useAccount();
 
   return (
     <Stack
@@ -38,11 +41,16 @@ const NavBar = () => {
             Claim
           </Text>
         </Link>
-        <Link href="/admin">
-          <Text _hover={{ textDecoration: "underline" }} fontWeight="bold">
-            Admin
-          </Text>
-        </Link>
+        {address &&
+          ADMIN_ADDRESSES.some(
+            (admin) => admin.toLowerCase() === address.toLowerCase()
+          ) && (
+            <Link href="/admin">
+              <Text _hover={{ textDecoration: "underline" }} fontWeight="bold">
+                Admin
+              </Text>
+            </Link>
+          )}
         <ConnectButton />
         <ColorModeButton />
       </Stack>

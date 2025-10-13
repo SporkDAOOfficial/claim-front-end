@@ -13,6 +13,8 @@ import { HiUpload } from "react-icons/hi";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toaster } from "@/components/ui/toaster";
+import { useAccount, useSignMessage } from "wagmi";
+import { ADMIN_ADDRESSES } from "@/utils/consts";
 
 export default function Admin() {
   const [submitting, setSubmitting] = useState(false);
@@ -20,6 +22,8 @@ export default function Admin() {
   const [uploadKey, setUploadKey] = useState(0);
 
   const { register, watch, reset } = useForm();
+  const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
   const handleFileChange = async (details: { acceptedFiles: File[] }) => {
     const newFile = details.acceptedFiles[0] || null;
@@ -32,6 +36,16 @@ export default function Admin() {
     const totalAllocation = watch("totalAllocation");
     const claimDeadline = watch("claimDeadline");
 
+    // Check if wallet is connected
+    if (!isConnected || !address) {
+      toaster.create({
+        title: "Please connect your wallet first",
+        type: "error",
+      });
+      setSubmitting(false);
+      return;
+    }
+
     // Convert datetime-local to Unix timestamp (UTC)
     const claimDeadlineTimestamp = claimDeadline
       ? Math.floor(new Date(claimDeadline).getTime() / 1000).toString()
@@ -39,11 +53,20 @@ export default function Admin() {
 
     if (file && tokenAddress && totalAllocation && claimDeadlineTimestamp) {
       try {
+        // Create message to sign
+        const message = `Create Epoch - Token: ${tokenAddress} - Deadline: ${claimDeadlineTimestamp} - Timestamp: ${Date.now()}`;
+
+        // Request signature from user
+        const signature = await signMessageAsync({ message });
+
         const formData = new FormData();
         formData.append("file", file);
         formData.append("tokenAddress", tokenAddress);
         formData.append("totalAllocation", totalAllocation);
         formData.append("claimDeadline", claimDeadlineTimestamp);
+        formData.append("signature", signature);
+        formData.append("address", address);
+        formData.append("message", message);
 
         const response = await fetch("/api/merkle-tree", {
           method: "POST",
@@ -106,6 +129,15 @@ export default function Admin() {
       console.error("Missing required fields or file");
     }
   };
+
+  if (
+    address &&
+    !ADMIN_ADDRESSES.some(
+      (admin: string) => admin.toLowerCase() === address.toLowerCase()
+    )
+  ) {
+    return <></>;
+  }
 
   return (
     <Stack mt="1rem">
