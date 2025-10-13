@@ -4,7 +4,7 @@ import { HiUpload } from "react-icons/hi";
 import { useState } from "react";
 
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
+  const [, setFile] = useState<File | null>(null);
 
   const handleFileChange = async (details: { acceptedFiles: File[] }) => {
     const file = details.acceptedFiles[0] || null;

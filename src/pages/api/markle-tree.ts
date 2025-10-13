@@ -114,7 +114,7 @@ export default async function handler(
       keepExtensions: true,
     });
 
-    const [fields, files] = await form.parse(req);
+    const [, files] = await form.parse(req);
 
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
 
