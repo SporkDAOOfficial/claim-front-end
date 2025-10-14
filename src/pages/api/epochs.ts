@@ -55,8 +55,6 @@ async function handleGetEpochs(req: NextApiRequest, res: NextApiResponse) {
       claimsCount: epoch._count.claims,
     }));
 
-    console.log(`Fetched ${response.length} epochs`);
-
     res.status(200).json({
       epochs: response,
       totalCount: response.length,
@@ -86,8 +84,6 @@ async function handleUpdateEpoch(req: NextApiRequest, res: NextApiResponse) {
       where: { id: parseInt(epochId) },
       data: { isActive },
     });
-
-    console.log(`Epoch ${epochId} updated to active: ${isActive}`);
 
     res.status(200).json({
       message: "Epoch updated successfully",

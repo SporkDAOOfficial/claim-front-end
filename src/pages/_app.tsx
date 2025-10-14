@@ -12,7 +12,7 @@ import {
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { polygon } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { metaMask, walletConnect } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
 import "@rainbow-me/rainbowkit/styles.css";
 
 // Create custom config to exclude Coinbase Wallet in development
@@ -21,7 +21,7 @@ const config =
     ? createConfig({
         chains: [polygon],
         connectors: [
-          metaMask(),
+          injected(),
           walletConnect({
             projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
           }),

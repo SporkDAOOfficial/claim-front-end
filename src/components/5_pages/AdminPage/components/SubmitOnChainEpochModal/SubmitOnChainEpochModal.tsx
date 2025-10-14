@@ -134,7 +134,6 @@ const SubmitOnChainEpochModal = ({ epoch }: SubmitOnChainEpochModalProps) => {
       });
 
       if (response.ok) {
-        console.log("Epoch updated to active successfully");
         // Optionally refresh the parent component's epoch list
         window.location.reload(); // Simple refresh for now
       } else {

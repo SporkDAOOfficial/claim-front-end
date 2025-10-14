@@ -10,7 +10,12 @@ import { memContractAddress } from "@/web3/contractAddresses";
 import { useState, useEffect } from "react";
 import { toaster } from "@/components/ui/toaster";
 
-const ClaimEpoch = ({ claim }: { claim: ClaimWithEpoch }) => {
+interface ClaimEpochProps {
+  claim: ClaimWithEpoch;
+  disabled: boolean;
+}
+
+const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
   const { address } = useAccount();
   const [isClaimed, setIsClaimed] = useState(false);
 
@@ -70,7 +75,7 @@ const ClaimEpoch = ({ claim }: { claim: ClaimWithEpoch }) => {
         size="xs"
         onClick={handleClaim}
         loading={isClaiming || isConfirming}
-        disabled={!canClaim()}
+        disabled={!canClaim() || disabled}
       >
         {isClaiming
           ? "Claiming..."
@@ -80,8 +85,10 @@ const ClaimEpoch = ({ claim }: { claim: ClaimWithEpoch }) => {
           ? "Claimed"
           : isDeadlinePassed()
           ? "Expired"
-          : !claim.epoch.isActive
+          : !claim.epoch.isActive || disabled
           ? "Inactive"
+          : disabled
+          ? "Not Eligible"
           : "Claim"}
       </Button>
     </Flex>

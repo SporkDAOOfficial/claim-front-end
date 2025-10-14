@@ -51,8 +51,6 @@ export default async function handler(
     // Normalize address to checksum format for consistent querying
     const normalizedAddress = getAddress(address);
 
-    console.log("Fetching claims for address:", normalizedAddress);
-
     // Fetch all claims for this address
     const claims = await prisma.merkleUserClaims.findMany({
       where: {
@@ -77,10 +75,6 @@ export default async function handler(
         createdAt: "desc",
       },
     });
-
-    console.log(
-      `Found ${claims.length} claims for address ${normalizedAddress}`
-    );
 
     const response: ClaimsApiResponse = {
       address: normalizedAddress,

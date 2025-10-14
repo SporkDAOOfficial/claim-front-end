@@ -55,7 +55,6 @@ async function verifyAdminSignature(
 
     // Check if the signature is valid
     if (!isValidSignature) {
-      console.log("Signature verification failed: invalid signature");
       return false;
     }
 
@@ -65,7 +64,6 @@ async function verifyAdminSignature(
     );
 
     if (!isAdmin) {
-      console.log(`Address ${address} is not in admin whitelist`);
       return false;
     }
 
@@ -325,8 +323,6 @@ export default async function handler(
       });
     }
 
-    console.log(`Admin ${address} verified successfully`);
-
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
 
     if (!file) {
@@ -336,23 +332,14 @@ export default async function handler(
     // Read the CSV file content
     const csvContent = fs.readFileSync(file.filepath, "utf-8");
 
-    console.log("CSV File received:");
-    console.log("Filename:", file.originalFilename);
-    console.log("Size:", file.size);
-    console.log("Content:", csvContent);
-
     // Parse CSV and generate Merkle tree
     const claims = parseCSV(csvContent);
-    console.log("Parsed claims:", claims);
 
     if (claims.length === 0) {
       return res.status(400).json({ error: "No valid claims found in CSV" });
     }
 
     const merkleTreeData = generateMerkleTree(claims);
-    console.log("Merkle tree generated:");
-    console.log("Root:", merkleTreeData.root);
-    console.log("Number of claims:", merkleTreeData.claims.length);
 
     // Create epoch with form data
     const epochData: EpochData = {
@@ -363,7 +350,6 @@ export default async function handler(
     };
 
     const epoch = await createEpoch(epochData);
-    console.log("Epoch created:", epoch.id);
 
     // Update epoch with Merkle root
     const updatedEpoch = await updateEpochWithMerkleRoot(
@@ -372,7 +358,6 @@ export default async function handler(
       tokenAddress,
       name || "Epoch"
     );
-    console.log("Epoch updated with Merkle root");
 
     // Save claims to database
     const savedClaims = await saveClaimsToDatabase(
@@ -380,7 +365,6 @@ export default async function handler(
       merkleTreeData.root,
       epoch.id
     );
-    console.log("Claims saved to database:", savedClaims.length);
 
     // Clean up the temporary file
     fs.unlinkSync(file.filepath);

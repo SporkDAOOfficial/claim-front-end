@@ -8,7 +8,6 @@ import {
   Separator,
   Stack,
   Text,
-  Table,
 } from "@chakra-ui/react";
 import { HiUpload } from "react-icons/hi";
 import { useState, useEffect } from "react";
@@ -16,9 +15,9 @@ import { useForm } from "react-hook-form";
 import { toaster } from "@/components/ui/toaster";
 import { useAccount, useSignMessage } from "wagmi";
 import { parseUnits } from "viem";
-import { formatNumber, formatWeiToNumber, isAdmin } from "@/utils/functions";
+import { isAdmin } from "@/utils/functions";
 import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
-import SubmitOnChainEpochModal from "./components/SubmitOnChainEpochModal/SubmitOnChainEpochModal";
+import AdminEpochsTable from "./components/AdminEpochsTable/AdminEpochsTable";
 
 export interface Epoch {
   id: number;
@@ -129,7 +128,6 @@ const AdminPage = () => {
         });
 
         const result = await response.json();
-        console.log("Full API Response:", result);
 
         // Check if the response is successful
         if (!response.ok) {
@@ -144,18 +142,6 @@ const AdminPage = () => {
           alert("Error: No epoch data received from server");
           return;
         }
-
-        const epochId = result.epoch.id;
-        const epochDeadline = result.epoch.claimDeadline;
-        const epochTokenAddress = result.epoch.tokenAddress;
-        const epochTotalAllocation = result.epoch.totalAllocation;
-        const merkleRoot = result.merkleTree.root;
-
-        console.log("Epoch ID:", epochId);
-        console.log("Epoch Deadline:", epochDeadline);
-        console.log("Token Address:", epochTokenAddress);
-        console.log("Total Allocation:", epochTotalAllocation);
-        console.log("Merkle Root:", merkleRoot);
 
         toaster.create({
           title: "Epoch created successfully",
@@ -192,7 +178,7 @@ const AdminPage = () => {
     }
   };
 
-  if (address && !isAdmin(address)) {
+  if (!address || !isAdmin(address) || !isConnected) {
     return <></>;
   }
 
@@ -316,59 +302,7 @@ const AdminPage = () => {
         {loadingEpochs ? (
           <Text>Loading epochs...</Text>
         ) : (
-          <Table.Root size="sm">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader>ID</Table.ColumnHeader>
-                <Table.ColumnHeader>Name</Table.ColumnHeader>
-                <Table.ColumnHeader>Token Address</Table.ColumnHeader>
-                <Table.ColumnHeader>Total Allocation</Table.ColumnHeader>
-                <Table.ColumnHeader>Claim Deadline</Table.ColumnHeader>
-                <Table.ColumnHeader>Claims Count</Table.ColumnHeader>
-                <Table.ColumnHeader>Status</Table.ColumnHeader>
-                <Table.ColumnHeader>Created</Table.ColumnHeader>
-                <Table.ColumnHeader>Action</Table.ColumnHeader>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {epochs.map((epoch: Epoch) => (
-                <Table.Row key={epoch.id}>
-                  <Table.Cell>{epoch.id}</Table.Cell>
-                  <Table.Cell>{epoch.name}</Table.Cell>
-                  <Table.Cell fontFamily="mono" fontSize="xs">
-                    {epoch.tokenAddress.slice(0, 6)}...
-                    {epoch.tokenAddress.slice(-4)}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {formatNumber(formatWeiToNumber(epoch.totalAllocation))}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {new Date(
-                      parseInt(epoch.claimDeadline) * 1000
-                    ).toLocaleString()}
-                  </Table.Cell>
-                  <Table.Cell>{epoch.claimsCount}</Table.Cell>
-                  <Table.Cell>
-                    <Text color={epoch.isActive ? "green.500" : "orange.500"}>
-                      {epoch.isActive ? "Active" : "Pending"}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {new Date(epoch.createdAt).toLocaleDateString()}
-                  </Table.Cell>
-                  <Table.Cell>
-                    {epoch.isActive ? (
-                      <Button size="xs" disabled>
-                        Epoch Submitted
-                      </Button>
-                    ) : (
-                      <SubmitOnChainEpochModal epoch={epoch} />
-                    )}
-                  </Table.Cell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
+          <AdminEpochsTable epochs={epochs} />
         )}
       </Stack>
     </Stack>
