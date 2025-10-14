@@ -10,7 +10,7 @@ import {
   Theme,
 } from "@rainbow-me/rainbowkit";
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { baseSepolia, polygon } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { metaMask, walletConnect } from "wagmi/connectors";
 import "@rainbow-me/rainbowkit/styles.css";
@@ -19,7 +19,7 @@ import "@rainbow-me/rainbowkit/styles.css";
 const config =
   process.env.NODE_ENV === "development"
     ? createConfig({
-        chains: [baseSepolia],
+        chains: [baseSepolia, polygon],
         connectors: [
           metaMask(),
           walletConnect({
@@ -28,13 +28,14 @@ const config =
         ],
         transports: {
           [baseSepolia.id]: http(),
+          [polygon.id]: http(),
         },
         ssr: true,
       })
     : getDefaultConfig({
         appName: "MEM",
         projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-        chains: [baseSepolia],
+        chains: [baseSepolia, polygon],
         ssr: true,
       });
 

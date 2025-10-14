@@ -79,17 +79,20 @@ async function verifyAdminSignature(
 /**
  * Generate proof hash for a single claim
  */
-export function generateLeafHash(address: string, amount: string): string {
-  // Contract uses: keccak256(bytes.concat(keccak256(abi.encode(msg.sender, amount))))
-  // This means: hash the concatenation of the hash of the encoded data with itself
+function generateLeafHash(address: string, amount: string): string {
+  // Generate proof hash for a single claim
   const encoded = encodeAbiParameters(
     [{ type: "address" }, { type: "uint256" }],
     [address as `0x${string}`, BigInt(amount)]
   );
+
+  // First hash: keccak256(abi.encode(address, amount))
   const firstHash = keccak256(encoded);
-  // bytes.concat(keccak256(...)) concatenates the hash with itself
-  const concatenated = concat([firstHash, firstHash]);
-  const finalHash = keccak256(concatenated);
+
+  // Second hash: keccak256(bytes.concat(keccak256(abi.encode(address, amount))))
+  // This matches the Solidity: keccak256(bytes.concat(keccak256(abi.encode(msg.sender, amount))))
+  const finalHash = keccak256(concat([firstHash]));
+
   return finalHash;
 }
 
@@ -111,7 +114,10 @@ export function generateMerkleTree(claims: ClaimData[]): MerkleTreeData {
     return generateLeafHash(claim.address, claim.amount);
   });
 
-  const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+  const tree = new MerkleTree(leaves, keccak256, {
+    sortLeaves: true,
+    sortPairs: true,
+  });
   const root = tree.getHexRoot();
 
   // Generate merkle proofs for each claim
