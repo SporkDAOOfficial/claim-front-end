@@ -48,17 +48,21 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
 
   return (
     <Table.Row>
-      <Table.Cell>{claim.epoch.name}</Table.Cell>
+      <Table.Cell fontSize="sm">{claim.epoch.name}</Table.Cell>
       <Table.Cell fontFamily="mono" fontSize="xs">
-        {claim.epoch.tokenAddress.slice(0, 6)}...
-        {claim.epoch.tokenAddress.slice(-4)}
+        {claim.epoch.tokenAddress}
       </Table.Cell>
-      <Table.Cell>{formatNumber(formatWeiToNumber(claim.amount))}</Table.Cell>
-      <Table.Cell>
+      <Table.Cell fontSize="sm">
+        {formatNumber(formatWeiToNumber(claim.amount))}
+      </Table.Cell>
+      <Table.Cell fontSize="sm">
         {new Date(parseInt(claim.epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
       <Table.Cell>
-        <Text color={claim.epoch.isActive ? "green.500" : "red.500"}>
+        <Text
+          color={claim.epoch.isActive ? "green.500" : "red.500"}
+          fontSize="sm"
+        >
           {claim.epoch.isActive ? "Active" : "Inactive"}
         </Text>
       </Table.Cell>

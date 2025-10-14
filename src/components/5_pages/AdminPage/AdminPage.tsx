@@ -235,30 +235,21 @@ const AdminPage = () => {
           </Flex>
         </Stack>
         {file && (
-          <Stack gap="2rem" w="30rem" justifyContent="space-between">
-            <Stack gap="1rem">
+          <Stack gap="1rem" w="30rem" justifyContent="space-between">
+            <Stack gap="1.5rem">
               <Field.Root>
                 <Field.Label>Campaign Name</Field.Label>
-                <Input
-                  size="sm"
-                  placeholder="Q1 2025 Airdrop"
-                  {...register("name")}
-                />
+                <Input size="sm" {...register("name")} />
               </Field.Root>
               <Field.Root>
                 <Field.Label>Token Address</Field.Label>
-                <Input
-                  size="sm"
-                  placeholder="0xdAC17F958D2ee523a2206206994597C13D831ec7"
-                  {...register("tokenAddress")}
-                />
+                <Input size="sm" {...register("tokenAddress")} />
               </Field.Root>
               <Stack direction="row" gap="1rem">
                 <Field.Root>
                   <Field.Label>Total Allocation</Field.Label>
                   <Input
                     size="sm"
-                    placeholder="12000"
                     type="number"
                     step="0.000001"
                     {...register("totalAllocation")}
