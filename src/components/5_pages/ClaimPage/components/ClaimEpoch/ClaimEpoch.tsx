@@ -4,6 +4,7 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useReadContract,
 } from "wagmi";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
@@ -17,7 +18,7 @@ interface ClaimEpochProps {
 
 const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
   const { address } = useAccount();
-  const [isClaimed, setIsClaimed] = useState(false);
+  const [isClaimed, setIsClaimed] = useState<boolean | null>(null);
 
   // Write contract hook for claiming
   const {
@@ -32,11 +33,29 @@ const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
       hash,
     });
 
+  // Read hasClaimed data from smart contract
+  const { data: hasClaimedResult } = useReadContract({
+    address: memContractAddress as `0x${string}`,
+    abi: memAbi,
+    functionName: "hasClaimed",
+    args: address
+      ? [BigInt(claim.epochId), address]
+      : undefined,
+    query: { enabled: !!address },
+  });
+
   // Check if claim deadline has passed
   const isDeadlinePassed = () => {
     const deadline = parseInt(claim.epoch.claimDeadline) * 1000;
     return Date.now() > deadline;
   };
+
+  // Update isClaimed state from smart contract
+  useEffect(() => {
+    if (hasClaimedResult !== undefined) {
+      setIsClaimed(hasClaimedResult as boolean);
+    }
+  }, [hasClaimedResult, claim.epochId]);
 
   // Check if user can claim
   const canClaim = () => {
@@ -81,6 +100,8 @@ const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
           ? "Claiming..."
           : isConfirming
           ? "Confirming..."
+          : isClaimed === null
+          ? "Loading..."
           : isClaimed
           ? "Claimed"
           : isDeadlinePassed()
