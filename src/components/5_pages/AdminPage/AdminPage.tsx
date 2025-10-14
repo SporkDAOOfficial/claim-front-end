@@ -15,20 +15,23 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toaster } from "@/components/ui/toaster";
 import { useAccount, useSignMessage } from "wagmi";
-import { formatNumber, isAdmin } from "@/utils/functions";
+import { parseUnits } from "viem";
+import { formatNumber, formatWeiToNumber, isAdmin } from "@/utils/functions";
 import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
+import SubmitOnChainEpochModal from "./components/SubmitOnChainEpochModal/SubmitOnChainEpochModal";
 
-interface Epoch {
+export interface Epoch {
   id: number;
   name: string;
-  description: string;
+  description: string | null;
   tokenAddress: string;
   totalAllocation: string;
   claimDeadline: string;
   merkleRoot: string;
   isActive: boolean;
-  createdAt: string;
+  createdAt: Date;
   claimsCount: number;
+  updatedAt: Date;
 }
 
 const AdminPage = () => {
@@ -72,6 +75,7 @@ const AdminPage = () => {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    const name = watch("name");
     const tokenAddress = watch("tokenAddress");
     const totalAllocation = watch("totalAllocation");
     const claimDeadline = watch("claimDeadline");
@@ -86,12 +90,22 @@ const AdminPage = () => {
       return;
     }
 
+    // Convert totalAllocation from regular number to wei using wagmi (assuming 18 decimals)
+    const totalAllocationInWei = totalAllocation
+      ? parseUnits(totalAllocation, 18).toString()
+      : null;
+
     // Convert datetime-local to Unix timestamp (UTC)
     const claimDeadlineTimestamp = claimDeadline
       ? Math.floor(new Date(claimDeadline).getTime() / 1000).toString()
       : null;
 
-    if (file && tokenAddress && totalAllocation && claimDeadlineTimestamp) {
+    if (
+      file &&
+      tokenAddress &&
+      totalAllocationInWei &&
+      claimDeadlineTimestamp
+    ) {
       try {
         // Create message to sign
         const message = `Create Epoch - Token: ${tokenAddress} - Deadline: ${claimDeadlineTimestamp} - Timestamp: ${Date.now()}`;
@@ -101,8 +115,9 @@ const AdminPage = () => {
 
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("name", name || "Epoch");
         formData.append("tokenAddress", tokenAddress);
-        formData.append("totalAllocation", totalAllocation);
+        formData.append("totalAllocation", totalAllocationInWei);
         formData.append("claimDeadline", claimDeadlineTimestamp);
         formData.append("signature", signature);
         formData.append("address", address);
@@ -152,6 +167,7 @@ const AdminPage = () => {
 
         // Reset form fields with explicit values
         reset({
+          name: "",
           tokenAddress: "",
           totalAllocation: "",
           claimDeadline: "",
@@ -236,6 +252,14 @@ const AdminPage = () => {
           <Stack gap="2rem" w="30rem" justifyContent="space-between">
             <Stack gap="1rem">
               <Field.Root>
+                <Field.Label>Campaign Name</Field.Label>
+                <Input
+                  size="sm"
+                  placeholder="Q1 2025 Airdrop"
+                  {...register("name")}
+                />
+              </Field.Root>
+              <Field.Root>
                 <Field.Label>Token Address</Field.Label>
                 <Input
                   size="sm"
@@ -243,23 +267,27 @@ const AdminPage = () => {
                   {...register("tokenAddress")}
                 />
               </Field.Root>
-              <Field.Root>
-                <Field.Label>Total Allocation</Field.Label>
-                <Input
-                  size="sm"
-                  placeholder="12000"
-                  {...register("totalAllocation")}
-                />
-              </Field.Root>
-              <Field.Root>
-                <Field.Label>Claim Deadline</Field.Label>
-                <Input
-                  size="sm"
-                  placeholder="2025-01-01T12:00"
-                  type="datetime-local"
-                  {...register("claimDeadline")}
-                />
-              </Field.Root>
+              <Stack direction="row" gap="1rem">
+                <Field.Root>
+                  <Field.Label>Total Allocation</Field.Label>
+                  <Input
+                    size="sm"
+                    placeholder="12000"
+                    type="number"
+                    step="0.000001"
+                    {...register("totalAllocation")}
+                  />
+                </Field.Root>
+                <Field.Root>
+                  <Field.Label>Claim Deadline</Field.Label>
+                  <Input
+                    size="sm"
+                    placeholder="2025-01-01T12:00"
+                    type="datetime-local"
+                    {...register("claimDeadline")}
+                  />
+                </Field.Root>
+              </Stack>
             </Stack>
             <Flex justifyContent="flex-end">
               <Button
@@ -268,6 +296,7 @@ const AdminPage = () => {
                 disabled={
                   !address ||
                   !isConnected ||
+                  watch("name") === "" ||
                   watch("tokenAddress") === "" ||
                   watch("totalAllocation") === "" ||
                   watch("claimDeadline") === ""
@@ -298,10 +327,11 @@ const AdminPage = () => {
                 <Table.ColumnHeader>Claims Count</Table.ColumnHeader>
                 <Table.ColumnHeader>Status</Table.ColumnHeader>
                 <Table.ColumnHeader>Created</Table.ColumnHeader>
+                <Table.ColumnHeader>Action</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {epochs.map((epoch) => (
+              {epochs.map((epoch: Epoch) => (
                 <Table.Row key={epoch.id}>
                   <Table.Cell>{epoch.id}</Table.Cell>
                   <Table.Cell>{epoch.name}</Table.Cell>
@@ -309,20 +339,31 @@ const AdminPage = () => {
                     {epoch.tokenAddress.slice(0, 6)}...
                     {epoch.tokenAddress.slice(-4)}
                   </Table.Cell>
-                  <Table.Cell>{formatNumber(epoch.totalAllocation)}</Table.Cell>
+                  <Table.Cell>
+                    {formatNumber(formatWeiToNumber(epoch.totalAllocation))}
+                  </Table.Cell>
                   <Table.Cell>
                     {new Date(
                       parseInt(epoch.claimDeadline) * 1000
-                    ).toLocaleDateString()}
+                    ).toLocaleString()}
                   </Table.Cell>
                   <Table.Cell>{epoch.claimsCount}</Table.Cell>
                   <Table.Cell>
-                    <Text color={epoch.isActive ? "green.500" : "red.500"}>
-                      {epoch.isActive ? "Active" : "Inactive"}
+                    <Text color={epoch.isActive ? "green.500" : "orange.500"}>
+                      {epoch.isActive ? "Active" : "Pending"}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>
                     {new Date(epoch.createdAt).toLocaleDateString()}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {epoch.isActive ? (
+                      <Button size="xs" disabled>
+                        Epoch Submitted
+                      </Button>
+                    ) : (
+                      <SubmitOnChainEpochModal epoch={epoch} />
+                    )}
                   </Table.Cell>
                 </Table.Row>
               ))}

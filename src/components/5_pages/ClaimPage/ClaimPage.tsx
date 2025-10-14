@@ -1,16 +1,11 @@
-import {
-  Button,
-  Heading,
-  Separator,
-  Stack,
-  Text,
-  Table,
-} from "@chakra-ui/react";
+import { Heading, Separator, Stack, Text, Table } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { ClaimWithEpoch } from "@/pages/api/claims";
 import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
-import { formatNumber } from "@/utils/functions";
+import { formatNumber, formatWeiToNumber } from "@/utils/functions";
+import ClaimEpoch from "./components/ClaimEpoch";
+import { getAddress } from "viem";
 
 const ClaimPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,15 +16,11 @@ const ClaimPage = () => {
     const fetchClaims = async () => {
       try {
         setIsLoading(true);
-        console.log(
-          "Fetching claims for address:",
-          address?.toLowerCase() ?? ""
-        );
 
         if (!address) return;
-
+        console.log(address);
         const response = await fetch(
-          `/api/claims?address=${address?.toLowerCase() ?? ""}`
+          `/api/claims?address=${address ? getAddress(address) : ""}`
         );
         const result = await response.json();
 
@@ -78,7 +69,6 @@ const ClaimPage = () => {
             <Table.ColumnHeader>Token Address</Table.ColumnHeader>
             <Table.ColumnHeader>Claim Amount</Table.ColumnHeader>
             <Table.ColumnHeader>Claim Deadline</Table.ColumnHeader>
-            <Table.ColumnHeader>Proof</Table.ColumnHeader>
             <Table.ColumnHeader>Status</Table.ColumnHeader>
             <Table.ColumnHeader>Action</Table.ColumnHeader>
           </Table.Row>
@@ -91,14 +81,13 @@ const ClaimPage = () => {
                 {claim.epoch.tokenAddress.slice(0, 6)}...
                 {claim.epoch.tokenAddress.slice(-4)}
               </Table.Cell>
-              <Table.Cell>{formatNumber(claim.amount)}</Table.Cell>
+              <Table.Cell>
+                {formatNumber(formatWeiToNumber(claim.amount))}
+              </Table.Cell>
               <Table.Cell>
                 {new Date(
                   parseInt(claim.epoch.claimDeadline) * 1000
                 ).toLocaleDateString()}
-              </Table.Cell>
-              <Table.Cell fontFamily="mono" fontSize="xs">
-                {claim.proof.slice(0, 10)}...{claim.proof.slice(-10)}
               </Table.Cell>
               <Table.Cell>
                 <Text color={claim.epoch.isActive ? "green.500" : "red.500"}>
@@ -106,9 +95,7 @@ const ClaimPage = () => {
                 </Text>
               </Table.Cell>
               <Table.Cell>
-                <Button size="xs" disabled={!claim.epoch.isActive}>
-                  Claim
-                </Button>
+                <ClaimEpoch claim={claim} />
               </Table.Cell>
             </Table.Row>
           ))}

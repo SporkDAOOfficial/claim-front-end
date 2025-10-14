@@ -9,17 +9,34 @@ import {
   RainbowKitProvider,
   Theme,
 } from "@rainbow-me/rainbowkit";
-import { WagmiProvider } from "wagmi";
-import { base } from "wagmi/chains";
+import { WagmiProvider, createConfig, http } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { metaMask, walletConnect } from "wagmi/connectors";
 import "@rainbow-me/rainbowkit/styles.css";
 
-const config = getDefaultConfig({
-  appName: "MEM",
-  projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-  chains: [base],
-  ssr: true, // If your dApp uses server side rendering (SSR)
-});
+// Create custom config to exclude Coinbase Wallet in development
+const config =
+  process.env.NODE_ENV === "development"
+    ? createConfig({
+        chains: [baseSepolia],
+        connectors: [
+          metaMask(),
+          walletConnect({
+            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
+          }),
+        ],
+        transports: {
+          [baseSepolia.id]: http(),
+        },
+        ssr: true,
+      })
+    : getDefaultConfig({
+        appName: "MEM",
+        projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
+        chains: [baseSepolia],
+        ssr: true,
+      });
 
 const queryClient = new QueryClient();
 

@@ -2,17 +2,24 @@ import { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import fs from "fs";
 import { MerkleTree } from "merkletreejs";
-import { keccak256, verifyMessage } from "viem";
+import {
+  keccak256,
+  verifyMessage,
+  encodeAbiParameters,
+  concat,
+  getAddress,
+} from "viem";
 import { prisma } from "../../lib/prisma";
 import { ADMIN_ADDRESSES } from "@/utils/consts";
 
 export interface ClaimData {
   address: string;
   amount: string; // Amount in wei (smallest unit)
-  proof: string; // Individual proof hash for this claim
+  proof: string[]; // Array of merkle proof hashes
 }
 
 export interface EpochData {
+  name: string;
   tokenAddress: string;
   totalAllocation: string;
   claimDeadline: string; // Unix timestamp as string
@@ -74,9 +81,16 @@ async function verifyAdminSignature(
  */
 export function generateLeafHash(address: string, amount: string): string {
   // Contract uses: keccak256(bytes.concat(keccak256(abi.encode(msg.sender, amount))))
-  // We need to replicate this in JavaScript
-  const encoded = keccak256(new TextEncoder().encode(address + amount));
-  return keccak256(encoded);
+  // This means: hash the concatenation of the hash of the encoded data with itself
+  const encoded = encodeAbiParameters(
+    [{ type: "address" }, { type: "uint256" }],
+    [address as `0x${string}`, BigInt(amount)]
+  );
+  const firstHash = keccak256(encoded);
+  // bytes.concat(keccak256(...)) concatenates the hash with itself
+  const concatenated = concat([firstHash, firstHash]);
+  const finalHash = keccak256(concatenated);
+  return finalHash;
 }
 
 /**
@@ -87,20 +101,23 @@ export function generateMerkleTree(claims: ClaimData[]): MerkleTreeData {
     throw new Error("Cannot generate Merkle tree with empty claims");
   }
 
-  // Sort claims by address for consistent ordering
+  // Sort claims by address for consistent ordering (use getAddress for proper checksum format)
   const sortedClaims = [...claims].sort((a, b) =>
-    a.address.toLowerCase().localeCompare(b.address.toLowerCase())
+    getAddress(a.address).localeCompare(getAddress(b.address))
   );
 
-  // Generate leaves and add proof hash to each claim
+  // Generate leaves for the merkle tree
   const leaves = sortedClaims.map((claim) => {
-    const leafHash = generateLeafHash(claim.address, claim.amount);
-    claim.proof = leafHash;
-    return leafHash;
+    return generateLeafHash(claim.address, claim.amount);
   });
 
   const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
   const root = tree.getHexRoot();
+
+  // Generate merkle proofs for each claim
+  sortedClaims.forEach((claim) => {
+    claim.proof = getMerkleProof(tree, claim.address, claim.amount);
+  });
 
   return {
     tree,
@@ -136,11 +153,18 @@ function parseCSV(csvContent: string): ClaimData[] {
 
     const [address, amount] = line.split(",");
     if (address && amount) {
-      claims.push({
-        address: address.trim().toLowerCase(), // Convert to lowercase
-        amount: amount.trim(),
-        proof: "", // Will be populated during Merkle tree generation
-      });
+      try {
+        // Normalize address to proper checksum format using viem
+        const normalizedAddress = getAddress(address.trim());
+        claims.push({
+          address: normalizedAddress, // Properly formatted checksum address
+          amount: amount.trim(),
+          proof: [], // Will be populated during Merkle tree generation
+        });
+      } catch (error) {
+        console.error(`Invalid address in CSV: ${address.trim()}`, error);
+        // Skip invalid addresses
+      }
     }
   }
 
@@ -149,35 +173,46 @@ function parseCSV(csvContent: string): ClaimData[] {
 
 /**
  * Create a new epoch with form data
+ * Manually manages ID to ensure it starts from 1 and increments properly
  */
 async function createEpoch(epochData: EpochData) {
+  // Get the highest existing ID
+  const lastEpoch = await prisma.epoch.findFirst({
+    orderBy: { id: "desc" },
+    select: { id: true },
+  });
+
+  // Calculate next ID (start from 1 if no epochs exist)
+  const nextId = lastEpoch ? lastEpoch.id + 1 : 1;
+
   return await prisma.epoch.create({
     data: {
-      name: "Epoch", // Will be updated with actual ID after creation
+      id: nextId, // Manually set the ID
+      name: epochData.name || "Epoch", // Use provided name or default
       description: `Token: ${epochData.tokenAddress}`,
       tokenAddress: epochData.tokenAddress,
       totalAllocation: epochData.totalAllocation,
       claimDeadline: epochData.claimDeadline,
       merkleRoot: "", // Will be updated after Merkle tree generation
-      isActive: true,
+      isActive: false,
     },
   });
 }
 
 /**
- * Update epoch with Merkle root and proper name
+ * Update epoch with Merkle root and proper description
  */
 async function updateEpochWithMerkleRoot(
   epochId: number,
   merkleRoot: string,
-  tokenAddress: string
+  tokenAddress: string,
+  name: string
 ) {
   return await prisma.epoch.update({
     where: { id: epochId },
     data: {
       merkleRoot,
-      name: `Epoch ${epochId}`,
-      description: `Epoch ${epochId} - Token: ${tokenAddress}`,
+      description: `${name} - Token: ${tokenAddress}`,
     },
   });
 }
@@ -191,9 +226,9 @@ async function saveClaimsToDatabase(
   epochId: number
 ) {
   const claimsData = claims.map((claim) => ({
-    address: claim.address.toLowerCase(), // Ensure lowercase in database
+    address: claim.address, // Keep original checksum format
     amount: claim.amount,
-    proof: claim.proof,
+    proof: JSON.stringify(claim.proof), // Store merkle proof array as JSON string
     merkleRoot: merkleRoot,
     epochId: epochId,
   }));
@@ -239,6 +274,7 @@ export default async function handler(
     const [fields, files] = await form.parse(req);
 
     // Extract form data
+    const name = Array.isArray(fields.name) ? fields.name[0] : fields.name;
     const tokenAddress = Array.isArray(fields.tokenAddress)
       ? fields.tokenAddress[0]
       : fields.tokenAddress;
@@ -314,6 +350,7 @@ export default async function handler(
 
     // Create epoch with form data
     const epochData: EpochData = {
+      name: name || "Epoch",
       tokenAddress,
       totalAllocation,
       claimDeadline,
@@ -326,7 +363,8 @@ export default async function handler(
     const updatedEpoch = await updateEpochWithMerkleRoot(
       epoch.id,
       merkleTreeData.root,
-      tokenAddress
+      tokenAddress,
+      name || "Epoch"
     );
     console.log("Epoch updated with Merkle root");
 

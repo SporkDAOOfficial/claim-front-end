@@ -18,10 +18,16 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
+  if (req.method === "GET") {
+    return handleGetEpochs(req, res);
+  } else if (req.method === "PUT") {
+    return handleUpdateEpoch(req, res);
+  } else {
     return res.status(405).json({ error: "Method not allowed" });
   }
+}
 
+async function handleGetEpochs(req: NextApiRequest, res: NextApiResponse) {
   try {
     const epochs = await prisma.epoch.findMany({
       include: {
@@ -61,6 +67,41 @@ export default async function handler(
       error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
       error: "Error fetching epochs",
+      details: errorMessage,
+    });
+  }
+}
+
+async function handleUpdateEpoch(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const { epochId, isActive } = req.body;
+
+    if (!epochId || typeof isActive !== "boolean") {
+      return res.status(400).json({
+        error: "Missing required fields: epochId and isActive",
+      });
+    }
+
+    const updatedEpoch = await prisma.epoch.update({
+      where: { id: parseInt(epochId) },
+      data: { isActive },
+    });
+
+    console.log(`Epoch ${epochId} updated to active: ${isActive}`);
+
+    res.status(200).json({
+      message: "Epoch updated successfully",
+      epoch: {
+        id: updatedEpoch.id,
+        isActive: updatedEpoch.isActive,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating epoch:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({
+      error: "Error updating epoch",
       details: errorMessage,
     });
   }

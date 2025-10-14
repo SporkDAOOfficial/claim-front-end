@@ -1,4 +1,5 @@
 import { ADMIN_ADDRESSES } from "./consts";
+import { formatUnits } from "viem";
 
 export const isAdmin = (address: string) => {
   return ADMIN_ADDRESSES.some(
@@ -11,4 +12,13 @@ export const formatNumber = (amount: string | number) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+};
+
+export const formatWeiToNumber = (
+  weiAmount: string | number,
+  decimals: number = 18
+) => {
+  const weiString = weiAmount.toString();
+  const formatted = formatUnits(BigInt(weiString), decimals);
+  return parseFloat(formatted);
 };

@@ -1,12 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "../../lib/prisma";
+import { getAddress } from "viem";
 
 // Interface for the API response
 export interface ClaimWithEpoch {
   id: string;
   address: string;
   amount: string;
-  proof: string;
+  proof: string[];
   merkleRoot: string;
   epochId: number;
   createdAt: string;
@@ -47,8 +48,8 @@ export default async function handler(
       });
     }
 
-    // Convert address to lowercase for consistent querying
-    const normalizedAddress = address.toLowerCase();
+    // Normalize address to checksum format for consistent querying
+    const normalizedAddress = getAddress(address);
 
     console.log("Fetching claims for address:", normalizedAddress);
 
@@ -88,7 +89,7 @@ export default async function handler(
         id: claim.id,
         address: claim.address,
         amount: claim.amount,
-        proof: claim.proof,
+        proof: JSON.parse(claim.proof || "[]"), // Parse JSON string back to array
         merkleRoot: claim.merkleRoot,
         epochId: claim.epochId,
         createdAt: claim.createdAt.toISOString(),
