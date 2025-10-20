@@ -1,7 +1,8 @@
-import { Button, Table, Text } from "@chakra-ui/react";
+import { Button, Table, Text, Flex } from "@chakra-ui/react";
 import { Epoch } from "../../AdminPage";
 import { formatNumber, formatWeiToNumber } from "@/utils/functions";
 import SubmitOnChainEpochModal from "../SubmitOnChainEpochModal/SubmitOnChainEpochModal";
+import AdminEpochActions from "../AdminEpochActions/AdminEpochActions";
 import { useReadContract } from "wagmi";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
@@ -23,9 +24,10 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
     active: false,
     unclaimed: "0",
   });
+  const [isLoadingContractData, setIsLoadingContractData] = useState(true);
 
   // Read epoch data from smart contract
-  const { data: contractEpochData } = useReadContract({
+  const { data: contractEpochData, error: contractError, isLoading: isContractLoading } = useReadContract({
     address: memContractAddress as `0x${string}`,
     abi: memAbi,
     functionName: "getEpoch",
@@ -54,9 +56,38 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
         unclaimed: data[6].toString(),
       };
 
+      console.log(`Epoch ${epoch.id} contract data:`, formattedData);
       setContractData(formattedData);
+      setIsLoadingContractData(false);
+    } else if (contractError) {
+      console.error(`Error fetching contract data for epoch ${epoch.id}:`, contractError);
+      setIsLoadingContractData(false);
+    } else if (!isContractLoading) {
+      // If not loading and no data, epoch might not exist on contract
+      console.log(`No contract data found for epoch ${epoch.id}`);
+      setIsLoadingContractData(false);
     }
-  }, [contractEpochData, epoch.id]);
+  }, [contractEpochData, contractError, isContractLoading, epoch.id]);
+
+  // Check if clawback is possible (has unclaimed tokens)
+  const canClawback = parseInt(contractData.unclaimed) > 0;
+
+  // Check if claim deadline has passed
+  const isDeadlinePassed = () => {
+    const deadline = parseInt(contractData.claimDeadline) * 1000;
+    return Date.now() > deadline;
+  };
+
+  // Determine the actual status based on contract active state and deadline
+  const getEpochStatus = () => {
+    if (isLoadingContractData) return { text: "Loading...", color: "gray.500" };
+    if (contractError) return { text: "Error", color: "red.500" };
+    if (!contractData.active) return { text: "Inactive", color: "orange.500" };
+    if (isDeadlinePassed()) return { text: "Expired", color: "red.500" };
+    return { text: "Active", color: "green.500" };
+  };
+
+  const epochStatus = getEpochStatus();
 
   return (
     <Table.Row>
@@ -74,18 +105,26 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       </Table.Cell>
       <Table.Cell fontSize="sm">{epoch.claimsCount}</Table.Cell>
       <Table.Cell>
-        <Text color={epoch.isActive ? "green.500" : "orange.500"} fontSize="sm">
-          {epoch.isActive ? "Active" : "Pending"}
+        <Text color={epochStatus.color} fontSize="sm">
+          {epochStatus.text}
         </Text>
       </Table.Cell>
       <Table.Cell>
-        {epoch.isActive ? (
-          <Button size="xs" disabled>
-            Epoch Submitted
-          </Button>
-        ) : (
-          <SubmitOnChainEpochModal epoch={epoch} />
-        )}
+        <Flex gap="0.5rem" direction="column">
+          {contractData.active ? (
+            <Button size="xs" disabled>
+              {isDeadlinePassed() ? "Epoch Expired" : "Epoch Submitted"}
+            </Button>
+          ) : (
+            <SubmitOnChainEpochModal epoch={epoch} />
+          )}
+          <AdminEpochActions
+            epochId={epoch.id}
+            isActive={contractData.active}
+            hasUnclaimed={canClawback}
+            claimDeadline={contractData.claimDeadline}
+          />
+        </Flex>
       </Table.Cell>
     </Table.Row>
   );
