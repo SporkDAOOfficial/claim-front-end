@@ -13,6 +13,7 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { polygon } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { injected, walletConnect } from "wagmi/connectors";
+import { UnicornAutoConnect } from "@unicorn.eth/autoconnect";
 import "@rainbow-me/rainbowkit/styles.css";
 
 // Create custom config to exclude Coinbase Wallet in development
@@ -54,6 +55,13 @@ export default function App({ Component, pageProps }: AppProps) {
             <ColorModeProvider>
               <AppLayout>
                 <Component {...pageProps} />
+                <UnicornAutoConnect
+                  clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || ""}
+                  factoryAddress={
+                    process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || ""
+                  }
+                  defaultChain="polygon"
+                />
               </AppLayout>
             </ColorModeProvider>
           </ChakraProvider>
