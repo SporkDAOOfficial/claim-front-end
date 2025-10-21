@@ -8,6 +8,7 @@ import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface ClaimsTableRowProps {
   claim: ClaimWithEpoch;
@@ -16,6 +17,7 @@ interface ClaimsTableRowProps {
 const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
   const { address } = useAccount();
 
+  const [tokenName, setTokenName] = useState<string>("");
   // State to store canClaim data with defaults
   const [canClaimData, setCanClaimData] = useState({
     canUserClaim: false,
@@ -32,6 +34,28 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
       : undefined,
     query: { enabled: !!address },
   });
+
+  // Fetch token name from token address contract
+  const { data: tokenNameResult } = useReadContract({
+    address: claim.epoch.tokenAddress as `0x${string}`,
+    abi: [
+      {
+        constant: true,
+        inputs: [],
+        name: "name",
+        outputs: [{ name: "", type: "string" }],
+        type: "function",
+      },
+    ],
+    functionName: "name",
+    query: { enabled: !!claim.epoch.tokenAddress },
+  });
+
+  useEffect(() => {
+    if (tokenNameResult && typeof tokenNameResult === "string") {
+      setTokenName(tokenNameResult);
+    }
+  }, [tokenNameResult, claim.epoch.tokenAddress]);
 
   // Update state when canClaim data is available
   useEffect(() => {
@@ -50,7 +74,9 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     <Table.Row>
       <Table.Cell fontSize="sm">{claim.epoch.name}</Table.Cell>
       <Table.Cell fontFamily="mono" fontSize="xs">
-        {claim.epoch.tokenAddress}
+        <Tooltip content={claim.epoch.tokenAddress}>
+          <Text cursor="pointer">{tokenName}</Text>
+        </Tooltip>
       </Table.Cell>
       <Table.Cell fontSize="sm">
         {formatNumber(formatWeiToNumber(claim.amount))}

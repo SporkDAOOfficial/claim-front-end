@@ -12,7 +12,7 @@ const ClaimsTable = ({ claims }: ClaimsTableProps) => {
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeader>Epoch</Table.ColumnHeader>
-          <Table.ColumnHeader>Token Address</Table.ColumnHeader>
+          <Table.ColumnHeader>Token</Table.ColumnHeader>
           <Table.ColumnHeader>Claim Amount</Table.ColumnHeader>
           <Table.ColumnHeader>Claim Deadline</Table.ColumnHeader>
           <Table.ColumnHeader>Status</Table.ColumnHeader>

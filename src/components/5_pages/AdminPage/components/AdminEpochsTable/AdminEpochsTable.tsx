@@ -13,7 +13,7 @@ const AdminEpochsTable = ({ epochs }: AdminEpochsTableProps) => {
         <Table.Row>
           <Table.ColumnHeader>ID</Table.ColumnHeader>
           <Table.ColumnHeader>Name</Table.ColumnHeader>
-          <Table.ColumnHeader>Token Address</Table.ColumnHeader>
+          <Table.ColumnHeader>Token</Table.ColumnHeader>
           <Table.ColumnHeader>Total Claims</Table.ColumnHeader>
           <Table.ColumnHeader>Claim Deadline</Table.ColumnHeader>
           <Table.ColumnHeader>Addresses</Table.ColumnHeader>
