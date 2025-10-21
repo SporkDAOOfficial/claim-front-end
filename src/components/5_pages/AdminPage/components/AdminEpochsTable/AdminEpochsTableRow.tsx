@@ -109,8 +109,21 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       </Table.Cell>
       <Table.Cell fontSize="sm">{epoch.claimsCount}</Table.Cell>
       <Table.Cell>
-        <Text color={epoch.isActive ? "green.500" : "orange.500"} fontSize="sm">
-          {epoch.isActive ? "Active" : "Pending"}
+        <Text
+          color={
+            epoch.isActive
+              ? isDeadlinePassed()
+                ? "red.500"
+                : "green.500"
+              : "orange.500"
+          }
+          fontSize="sm"
+        >
+          {epoch.isActive
+            ? isDeadlinePassed()
+              ? "Expired"
+              : "Active"
+            : "Pending"}
         </Text>
       </Table.Cell>
       <Table.Cell>
