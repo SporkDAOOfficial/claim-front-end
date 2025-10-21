@@ -89,21 +89,7 @@ const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
         loading={isClaiming || isConfirming}
         disabled={!canClaim() || disabled}
       >
-        {isClaiming
-          ? "Claiming..."
-          : isConfirming
-          ? "Confirming..."
-          : isClaimed === null
-          ? "Loading..."
-          : isClaimed
-          ? "Claimed"
-          : isDeadlinePassed
-          ? "Expired"
-          : !claim.epoch.isActive || disabled
-          ? "Inactive"
-          : disabled
-          ? "Not Eligible"
-          : "Claim"}
+        Claim
       </Button>
     </Flex>
   );

@@ -95,10 +95,20 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
       </Table.Cell>
       <Table.Cell>
         <Text
-          color={claim.epoch.isActive ? "green.500" : "red.500"}
+          color={
+            claim.epoch.isActive
+              ? isDeadlinePassed()
+                ? "red.500"
+                : "green.500"
+              : "orange.500"
+          }
           fontSize="sm"
         >
-          {claim.epoch.isActive ? "Active" : "Inactive"}
+          {claim.epoch.isActive
+            ? isDeadlinePassed()
+              ? "Expired"
+              : "Active"
+            : "Inactive"}
         </Text>
       </Table.Cell>
       <Table.Cell>
