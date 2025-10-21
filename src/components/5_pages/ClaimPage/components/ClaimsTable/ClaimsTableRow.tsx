@@ -89,7 +89,7 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
       </Table.Cell>
       <Table.Cell
         fontSize="sm"
-        color={isDeadlinePassed() ? "red.500" : undefined}
+        color={isDeadlinePassed() ? "orange.500" : undefined}
       >
         {new Date(parseInt(claim.epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
@@ -98,7 +98,7 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
           color={
             claim.epoch.isActive
               ? isDeadlinePassed()
-                ? "red.500"
+                ? "orange.500"
                 : "green.500"
               : "orange.500"
           }

@@ -103,7 +103,7 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       </Table.Cell>
       <Table.Cell
         fontSize="sm"
-        color={isDeadlinePassed() ? "red.500" : undefined}
+        color={isDeadlinePassed() ? "orange.500" : undefined}
       >
         {new Date(parseInt(epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
@@ -113,7 +113,7 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
           color={
             epoch.isActive
               ? isDeadlinePassed()
-                ? "red.500"
+                ? "orange.500"
                 : "green.500"
               : "orange.500"
           }
