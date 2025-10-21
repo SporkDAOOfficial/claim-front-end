@@ -70,6 +70,12 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     }
   }, [canClaimResult, claim.epochId]);
 
+  // Check if claim deadline has passed
+  const isDeadlinePassed = () => {
+    const deadline = parseInt(claim.epoch.claimDeadline) * 1000;
+    return Date.now() > deadline;
+  };
+
   return (
     <Table.Row>
       <Table.Cell fontSize="sm">{claim.epoch.name}</Table.Cell>
@@ -81,7 +87,10 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
       <Table.Cell fontSize="sm">
         {formatNumber(formatWeiToNumber(claim.amount))}
       </Table.Cell>
-      <Table.Cell fontSize="sm">
+      <Table.Cell
+        fontSize="sm"
+        color={isDeadlinePassed() ? "red.500" : undefined}
+      >
         {new Date(parseInt(claim.epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
       <Table.Cell>
@@ -93,7 +102,11 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
         </Text>
       </Table.Cell>
       <Table.Cell>
-        <ClaimEpoch claim={claim} disabled={!canClaimData.canUserClaim} />
+        <ClaimEpoch
+          claim={claim}
+          disabled={!canClaimData.canUserClaim}
+          isDeadlinePassed={isDeadlinePassed()}
+        />
       </Table.Cell>
     </Table.Row>
   );

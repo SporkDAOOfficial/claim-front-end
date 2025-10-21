@@ -82,6 +82,12 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
     }
   }, [contractEpochData, epoch.id]);
 
+  // Check if claim deadline has passed
+  const isDeadlinePassed = () => {
+    const deadline = parseInt(epoch.claimDeadline) * 1000;
+    return Date.now() > deadline;
+  };
+
   return (
     <Table.Row>
       <Table.Cell fontSize="sm">{epoch.id}</Table.Cell>
@@ -95,7 +101,10 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
         {formatNumber(formatWeiToNumber(contractData.totalClaimed))} /{" "}
         {formatNumber(formatWeiToNumber(epoch.totalAllocation))}
       </Table.Cell>
-      <Table.Cell fontSize="sm">
+      <Table.Cell
+        fontSize="sm"
+        color={isDeadlinePassed() ? "red.500" : undefined}
+      >
         {new Date(parseInt(epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
       <Table.Cell fontSize="sm">{epoch.claimsCount}</Table.Cell>

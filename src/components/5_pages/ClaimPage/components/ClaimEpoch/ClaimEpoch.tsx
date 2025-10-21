@@ -14,9 +14,10 @@ import { toaster } from "@/components/ui/toaster";
 interface ClaimEpochProps {
   claim: ClaimWithEpoch;
   disabled: boolean;
+  isDeadlinePassed: boolean;
 }
 
-const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
+const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
   const { address } = useAccount();
   const [isClaimed, setIsClaimed] = useState<boolean | null>(null);
 
@@ -38,17 +39,9 @@ const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
     address: memContractAddress as `0x${string}`,
     abi: memAbi,
     functionName: "hasClaimed",
-    args: address
-      ? [BigInt(claim.epochId), address]
-      : undefined,
+    args: address ? [BigInt(claim.epochId), address] : undefined,
     query: { enabled: !!address },
   });
-
-  // Check if claim deadline has passed
-  const isDeadlinePassed = () => {
-    const deadline = parseInt(claim.epoch.claimDeadline) * 1000;
-    return Date.now() > deadline;
-  };
 
   // Update isClaimed state from smart contract
   useEffect(() => {
@@ -59,7 +52,7 @@ const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
 
   // Check if user can claim
   const canClaim = () => {
-    return claim.epoch.isActive && !isDeadlinePassed() && !isClaimed && address;
+    return claim.epoch.isActive && !isDeadlinePassed && !isClaimed && address;
   };
 
   // Handle claim transaction
@@ -104,7 +97,7 @@ const ClaimEpoch = ({ claim, disabled }: ClaimEpochProps) => {
           ? "Loading..."
           : isClaimed
           ? "Claimed"
-          : isDeadlinePassed()
+          : isDeadlinePassed
           ? "Expired"
           : !claim.epoch.isActive || disabled
           ? "Inactive"
