@@ -6,6 +6,35 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    // Enable experimental features to handle module loading warnings
+    esmExternals: 'loose',
+  },
+  webpack: (config, { isServer }) => {
+    // Handle module resolution issues
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+
+    // Suppress specific warnings
+    config.ignoreWarnings = [
+      /Module not found: Can't resolve '@react-native-async-storage\/async-storage'/,
+      /Critical dependency: the request of a dependency is an expression/,
+      /CommonJS module.*is loading ES Module/,
+    ];
+
+    return config;
+  },
+  // Suppress specific warnings
+  onDemandEntries: {
+    // period (in ms) where the server will keep pages in the buffer
+    maxInactiveAge: 25 * 1000,
+    // number of pages that should be kept simultaneously without being disposed
+    pagesBufferLength: 2,
+  },
 };
 
 export default nextConfig;
