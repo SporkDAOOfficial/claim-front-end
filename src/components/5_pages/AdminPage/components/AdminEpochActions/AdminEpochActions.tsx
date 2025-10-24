@@ -1,4 +1,4 @@
-import { Button, Flex, Text } from "@chakra-ui/react";
+import { Button, Flex, SimpleGrid } from "@chakra-ui/react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
@@ -12,11 +12,11 @@ interface AdminEpochActionsProps {
   claimDeadline: string;
 }
 
-const AdminEpochActions = ({ 
-  epochId, 
-  isActive, 
-  hasUnclaimed, 
-  claimDeadline 
+const AdminEpochActions = ({
+  epochId,
+  isActive,
+  hasUnclaimed,
+  claimDeadline,
 }: AdminEpochActionsProps) => {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [isClawingBack, setIsClawingBack] = useState(false);
@@ -118,7 +118,11 @@ const AdminEpochActions = ({
   useEffect(() => {
     if (isDeactivatingPending || isDeactivatingConfirming) {
       setIsDeactivating(true);
-    } else if (!isDeactivatingPending && !isDeactivatingConfirming && !isDeactivated) {
+    } else if (
+      !isDeactivatingPending &&
+      !isDeactivatingConfirming &&
+      !isDeactivated
+    ) {
       setIsDeactivating(false);
     }
   }, [isDeactivatingPending, isDeactivatingConfirming, isDeactivated]);
@@ -126,7 +130,11 @@ const AdminEpochActions = ({
   useEffect(() => {
     if (isClawingBackPending || isClawbackConfirming) {
       setIsClawingBack(true);
-    } else if (!isClawingBackPending && !isClawbackConfirming && !isClawedBack) {
+    } else if (
+      !isClawingBackPending &&
+      !isClawbackConfirming &&
+      !isClawedBack
+    ) {
       setIsClawingBack(false);
     }
   }, [isClawingBackPending, isClawbackConfirming, isClawedBack]);
@@ -134,7 +142,7 @@ const AdminEpochActions = ({
   return (
     <Flex gap="0.5rem" direction="column">
       {isActive && (
-        <Flex gap="0.5rem">
+        <SimpleGrid columns={2} gap="0.5rem">
           <Button
             size="xs"
             onClick={handleDeactivate}
@@ -154,10 +162,14 @@ const AdminEpochActions = ({
               colorPalette="red"
               variant="outline"
             >
-              {isDeactivating ? "Processing..." : isDeadlinePassed() ? "Deactivate & Clawback" : "Deactivate & Clawback"}
+              {isDeactivating
+                ? "Processing..."
+                : isDeadlinePassed()
+                ? "Deactivate & Clawback"
+                : "Deactivate & Clawback"}
             </Button>
           )}
-        </Flex>
+        </SimpleGrid>
       )}
       {!isActive && hasUnclaimed && (
         <Button
@@ -170,16 +182,6 @@ const AdminEpochActions = ({
         >
           {isClawingBack ? "Clawing back..." : "Clawback"}
         </Button>
-      )}
-      {!isActive && !hasUnclaimed && (
-        <Text fontSize="xs" color="fg.muted">
-          No actions available
-        </Text>
-      )}
-      {isActive && isDeadlinePassed() && !hasUnclaimed && (
-        <Text fontSize="xs" color="red.500">
-          Expired - No unclaimed tokens
-        </Text>
       )}
     </Flex>
   );

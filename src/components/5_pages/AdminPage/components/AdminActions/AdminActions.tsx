@@ -1,10 +1,18 @@
-import { Button, Field, Flex, Heading, Input, Stack, Text, Separator } from "@chakra-ui/react";
+import {
+  Button,
+  Field,
+  Flex,
+  Heading,
+  Input,
+  Stack,
+  Text,
+  SimpleGrid,
+} from "@chakra-ui/react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useState, useEffect } from "react";
 import { toaster } from "@/components/ui/toaster";
-import { useAccount } from "wagmi";
 
 const AdminActions = () => {
   const [tokenAddress, setTokenAddress] = useState("");
@@ -15,8 +23,6 @@ const AdminActions = () => {
   const [isGrantingCreator, setIsGrantingCreator] = useState(false);
   const [isRevokingAdmin, setIsRevokingAdmin] = useState(false);
   const [isRevokingCreator, setIsRevokingCreator] = useState(false);
-
-  const { address } = useAccount();
 
   // Emergency recovery
   const {
@@ -66,22 +72,28 @@ const AdminActions = () => {
     });
 
   // Wait for grant creator transaction
-  const { isLoading: isGrantCreatorConfirming, isSuccess: isGrantCreatorSuccess } =
-    useWaitForTransactionReceipt({
-      hash: grantCreatorHash,
-    });
+  const {
+    isLoading: isGrantCreatorConfirming,
+    isSuccess: isGrantCreatorSuccess,
+  } = useWaitForTransactionReceipt({
+    hash: grantCreatorHash,
+  });
 
   // Wait for revoke admin transaction
-  const { isLoading: isRevokeAdminConfirming, isSuccess: isRevokeAdminSuccess } =
-    useWaitForTransactionReceipt({
-      hash: revokeAdminHash,
-    });
+  const {
+    isLoading: isRevokeAdminConfirming,
+    isSuccess: isRevokeAdminSuccess,
+  } = useWaitForTransactionReceipt({
+    hash: revokeAdminHash,
+  });
 
   // Wait for revoke creator transaction
-  const { isLoading: isRevokeCreatorConfirming, isSuccess: isRevokeCreatorSuccess } =
-    useWaitForTransactionReceipt({
-      hash: revokeCreatorHash,
-    });
+  const {
+    isLoading: isRevokeCreatorConfirming,
+    isSuccess: isRevokeCreatorSuccess,
+  } = useWaitForTransactionReceipt({
+    hash: revokeCreatorHash,
+  });
 
   // Handle emergency recovery
   const handleEmergencyRecovery = () => {
@@ -212,7 +224,11 @@ const AdminActions = () => {
   useEffect(() => {
     if (isRecoveryPending || isRecoveryConfirming) {
       setIsRecovering(true);
-    } else if (!isRecoveryPending && !isRecoveryConfirming && !isRecoverySuccess) {
+    } else if (
+      !isRecoveryPending &&
+      !isRecoveryConfirming &&
+      !isRecoverySuccess
+    ) {
       setIsRecovering(false);
     }
   }, [isRecoveryPending, isRecoveryConfirming, isRecoverySuccess]);
@@ -220,7 +236,11 @@ const AdminActions = () => {
   useEffect(() => {
     if (isGrantAdminPending || isGrantAdminConfirming) {
       setIsGrantingAdmin(true);
-    } else if (!isGrantAdminPending && !isGrantAdminConfirming && !isGrantAdminSuccess) {
+    } else if (
+      !isGrantAdminPending &&
+      !isGrantAdminConfirming &&
+      !isGrantAdminSuccess
+    ) {
       setIsGrantingAdmin(false);
     }
   }, [isGrantAdminPending, isGrantAdminConfirming, isGrantAdminSuccess]);
@@ -228,7 +248,11 @@ const AdminActions = () => {
   useEffect(() => {
     if (isGrantCreatorPending || isGrantCreatorConfirming) {
       setIsGrantingCreator(true);
-    } else if (!isGrantCreatorPending && !isGrantCreatorConfirming && !isGrantCreatorSuccess) {
+    } else if (
+      !isGrantCreatorPending &&
+      !isGrantCreatorConfirming &&
+      !isGrantCreatorSuccess
+    ) {
       setIsGrantingCreator(false);
     }
   }, [isGrantCreatorPending, isGrantCreatorConfirming, isGrantCreatorSuccess]);
@@ -236,7 +260,11 @@ const AdminActions = () => {
   useEffect(() => {
     if (isRevokeAdminPending || isRevokeAdminConfirming) {
       setIsRevokingAdmin(true);
-    } else if (!isRevokeAdminPending && !isRevokeAdminConfirming && !isRevokeAdminSuccess) {
+    } else if (
+      !isRevokeAdminPending &&
+      !isRevokeAdminConfirming &&
+      !isRevokeAdminSuccess
+    ) {
       setIsRevokingAdmin(false);
     }
   }, [isRevokeAdminPending, isRevokeAdminConfirming, isRevokeAdminSuccess]);
@@ -244,144 +272,154 @@ const AdminActions = () => {
   useEffect(() => {
     if (isRevokeCreatorPending || isRevokeCreatorConfirming) {
       setIsRevokingCreator(true);
-    } else if (!isRevokeCreatorPending && !isRevokeCreatorConfirming && !isRevokeCreatorSuccess) {
+    } else if (
+      !isRevokeCreatorPending &&
+      !isRevokeCreatorConfirming &&
+      !isRevokeCreatorSuccess
+    ) {
       setIsRevokingCreator(false);
     }
-  }, [isRevokeCreatorPending, isRevokeCreatorConfirming, isRevokeCreatorSuccess]);
+  }, [
+    isRevokeCreatorPending,
+    isRevokeCreatorConfirming,
+    isRevokeCreatorSuccess,
+  ]);
 
   return (
-    <Stack gap="2rem">
+    <Stack>
       <Heading size="lg">Admin Actions</Heading>
-      
-      {/* Emergency Recovery Section */}
-      <Stack
-        border="1px solid"
-        borderColor="fg.subtle"
-        fontSize="sm"
-        p="1rem"
-        rounded="md"
-        gap="1rem"
-      >
-        <Stack gap="0.5rem">
-          <Heading size="md">Emergency Token Recovery</Heading>
-          <Text fontSize="sm" color="fg.muted">
-            Recover tokens from expired epochs that have unclaimed amounts. This will transfer all unclaimed tokens back to the contract admin.
-          </Text>
-        </Stack>
-        
-        <Field.Root>
-          <Field.Label>Token Address</Field.Label>
-          <Input
-            size="sm"
-            placeholder="0x..."
-            value={tokenAddress}
-            onChange={(e) => setTokenAddress(e.target.value)}
-          />
-        </Field.Root>
-        
-        <Flex justifyContent="flex-end">
-          <Button
-            onClick={handleEmergencyRecovery}
-            loading={isRecovering}
-            disabled={!tokenAddress || isRecovering}
-            colorPalette="red"
-            variant="outline"
-            size="sm"
-          >
-            {isRecovering ? "Recovering..." : "Emergency Recovery"}
-          </Button>
-        </Flex>
-      </Stack>
+      <SimpleGrid columns={2} gap="2rem">
+        {/* Emergency Recovery Section */}
+        <Stack
+          border="1px solid"
+          borderColor="fg.subtle"
+          fontSize="sm"
+          p="1rem"
+          rounded="md"
+          gap="1rem"
+        >
+          <Stack gap="0.5rem">
+            <Heading size="md">Emergency Token Recovery</Heading>
+            <Text fontSize="sm" color="fg.muted">
+              Recover tokens from expired epochs that have unclaimed amounts.
+              This will transfer all unclaimed tokens back to the contract
+              admin.
+            </Text>
+          </Stack>
 
-      <Separator />
-
-      {/* Role Management Section */}
-      <Stack
-        border="1px solid"
-        borderColor="fg.subtle"
-        fontSize="sm"
-        p="1rem"
-        rounded="md"
-        gap="1rem"
-      >
-        <Stack gap="0.5rem">
-          <Heading size="md">Role Management</Heading>
-          <Text fontSize="sm" color="fg.muted">
-            Grant or revoke admin and creator roles. Admin roles can manage epochs and perform emergency operations. Creator roles can create new epochs.
-          </Text>
-        </Stack>
-        
-        <Stack direction="row" gap="1rem">
-          <Field.Root flex="1">
-            <Field.Label>Admin Address</Field.Label>
+          <Field.Root>
+            <Field.Label>Token Address</Field.Label>
             <Input
               size="sm"
               placeholder="0x..."
-              value={adminAddress}
-              onChange={(e) => setAdminAddress(e.target.value)}
+              value={tokenAddress}
+              onChange={(e) => setTokenAddress(e.target.value)}
             />
           </Field.Root>
-          
-          <Field.Root flex="1">
-            <Field.Label>Creator Address</Field.Label>
-            <Input
-              size="sm"
-              placeholder="0x..."
-              value={creatorAddress}
-              onChange={(e) => setCreatorAddress(e.target.value)}
-            />
-          </Field.Root>
+
+          <Flex justifyContent="flex-end">
+            <Button
+              onClick={handleEmergencyRecovery}
+              loading={isRecovering}
+              disabled={!tokenAddress || isRecovering}
+              colorPalette="red"
+              variant="outline"
+              size="xs"
+            >
+              {isRecovering ? "Recovering..." : "Emergency Recovery"}
+            </Button>
+          </Flex>
         </Stack>
-        
-        <Flex gap="0.5rem" justifyContent="flex-end" wrap="wrap">
-          <Button
-            onClick={handleGrantAdmin}
-            loading={isGrantingAdmin}
-            disabled={!adminAddress || isGrantingAdmin}
-            colorPalette="blue"
-            variant="outline"
-            size="sm"
-          >
-            {isGrantingAdmin ? "Granting..." : "Grant Admin"}
-          </Button>
-          
-          <Button
-            onClick={handleRevokeAdmin}
-            loading={isRevokingAdmin}
-            disabled={!adminAddress || isRevokingAdmin}
-            colorPalette="red"
-            variant="outline"
-            size="sm"
-          >
-            {isRevokingAdmin ? "Revoking..." : "Revoke Admin"}
-          </Button>
-          
-          <Button
-            onClick={handleGrantCreator}
-            loading={isGrantingCreator}
-            disabled={!creatorAddress || isGrantingCreator}
-            colorPalette="green"
-            variant="outline"
-            size="sm"
-          >
-            {isGrantingCreator ? "Granting..." : "Grant Creator"}
-          </Button>
-          
-          <Button
-            onClick={handleRevokeCreator}
-            loading={isRevokingCreator}
-            disabled={!creatorAddress || isRevokingCreator}
-            colorPalette="orange"
-            variant="outline"
-            size="sm"
-          >
-            {isRevokingCreator ? "Revoking..." : "Revoke Creator"}
-          </Button>
-        </Flex>
-      </Stack>
+
+        {/* Role Management Section */}
+        <Stack
+          border="1px solid"
+          borderColor="fg.subtle"
+          fontSize="sm"
+          p="1rem"
+          rounded="md"
+          gap="1rem"
+        >
+          <Stack gap="0.5rem">
+            <Heading size="md">Role Management</Heading>
+            <Text fontSize="sm" color="fg.muted">
+              Grant or revoke admin and creator roles. Admin roles can manage
+              epochs and perform emergency operations. Creator roles can create
+              new epochs.
+            </Text>
+          </Stack>
+
+          <Stack direction="row" gap="1rem">
+            <Field.Root flex="1">
+              <Field.Label>Admin Address</Field.Label>
+              <Input
+                size="sm"
+                placeholder="0x..."
+                value={adminAddress}
+                onChange={(e) => setAdminAddress(e.target.value)}
+              />
+            </Field.Root>
+
+            <Field.Root flex="1">
+              <Field.Label>Creator Address</Field.Label>
+              <Input
+                size="sm"
+                placeholder="0x..."
+                value={creatorAddress}
+                onChange={(e) => setCreatorAddress(e.target.value)}
+              />
+            </Field.Root>
+          </Stack>
+
+          <Flex gap="0.5rem" justifyContent="flex-end" wrap="wrap">
+            <Button
+              onClick={handleGrantAdmin}
+              loading={isGrantingAdmin}
+              disabled={!adminAddress || isGrantingAdmin}
+              colorPalette="blue"
+              variant="outline"
+              size="xs"
+            >
+              {isGrantingAdmin ? "Granting..." : "Grant Admin"}
+            </Button>
+
+            <Button
+              onClick={handleRevokeAdmin}
+              loading={isRevokingAdmin}
+              disabled={!adminAddress || isRevokingAdmin}
+              colorPalette="red"
+              variant="outline"
+              size="xs"
+            >
+              {isRevokingAdmin ? "Revoking..." : "Revoke Admin"}
+            </Button>
+
+            <Button
+              onClick={handleGrantCreator}
+              loading={isGrantingCreator}
+              disabled={!creatorAddress || isGrantingCreator}
+              colorPalette="green"
+              variant="outline"
+              size="xs"
+            >
+              {isGrantingCreator ? "Granting..." : "Grant Creator"}
+            </Button>
+
+            <Button
+              onClick={handleRevokeCreator}
+              loading={isRevokingCreator}
+              disabled={!creatorAddress || isRevokingCreator}
+              colorPalette="orange"
+              variant="outline"
+              size="xs"
+            >
+              {isRevokingCreator ? "Revoking..." : "Revoke Creator"}
+            </Button>
+          </Flex>
+        </Stack>
+      </SimpleGrid>
     </Stack>
   );
 };
 
 export default AdminActions;
-

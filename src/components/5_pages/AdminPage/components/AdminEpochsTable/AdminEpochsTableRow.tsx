@@ -1,4 +1,4 @@
-import { Button, Table, Text, Flex } from "@chakra-ui/react";
+import { Table, Text, Flex } from "@chakra-ui/react";
 import { Epoch } from "../../AdminPage";
 import { formatNumber, formatWeiToNumber } from "@/utils/functions";
 import SubmitOnChainEpochModal from "../SubmitOnChainEpochModal/SubmitOnChainEpochModal";
@@ -29,12 +29,18 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
   const [isLoadingContractData, setIsLoadingContractData] = useState(true);
 
   // Read epoch data from smart contract
-  const { data: contractEpochData, error: contractError, isLoading: isContractLoading } = useReadContract({
+  const {
+    data: contractEpochData,
+    error: contractError,
+    isLoading: isContractLoading,
+  } = useReadContract({
     address: memContractAddress as `0x${string}`,
     abi: memAbi,
     functionName: "getEpoch",
     args: [BigInt(epoch.id)],
   });
+
+  console.log(contractEpochData);
 
   // Fetch token name from token address contract
   const { data: tokenNameResult } = useReadContract({
@@ -84,7 +90,10 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       setContractData(formattedData);
       setIsLoadingContractData(false);
     } else if (contractError) {
-      console.error(`Error fetching contract data for epoch ${epoch.id}:`, contractError);
+      console.error(
+        `Error fetching contract data for epoch ${epoch.id}:`,
+        contractError
+      );
       setIsLoadingContractData(false);
     } else if (!isContractLoading) {
       // If not loading and no data, epoch might not exist on contract
@@ -113,12 +122,6 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
 
   const epochStatus = getEpochStatus();
 
-  // Check if claim deadline has passed
-  const isDeadlinePassed = () => {
-    const deadline = parseInt(epoch.claimDeadline) * 1000;
-    return Date.now() > deadline;
-  };
-
   return (
     <Table.Row>
       <Table.Cell fontSize="sm">{epoch.id}</Table.Cell>
@@ -134,7 +137,7 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       </Table.Cell>
       <Table.Cell
         fontSize="sm"
-        color={isDeadlinePassed() ? "orange.500" : undefined}
+        color={isDeadlinePassed() ? "red.500" : undefined}
       >
         {new Date(parseInt(epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
@@ -146,13 +149,7 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       </Table.Cell>
       <Table.Cell>
         <Flex gap="0.5rem" direction="column">
-          {contractData.active ? (
-            <Button size="xs" disabled>
-              {isDeadlinePassed() ? "Epoch Expired" : "Epoch Submitted"}
-            </Button>
-          ) : (
-            <SubmitOnChainEpochModal epoch={epoch} />
-          )}
+          {!contractData.active && <SubmitOnChainEpochModal epoch={epoch} />}
           <AdminEpochActions
             epochId={epoch.id}
             isActive={contractData.active}

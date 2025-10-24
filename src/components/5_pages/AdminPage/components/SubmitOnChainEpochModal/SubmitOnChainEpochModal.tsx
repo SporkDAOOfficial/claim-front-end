@@ -147,9 +147,11 @@ const SubmitOnChainEpochModal = ({ epoch }: SubmitOnChainEpochModalProps) => {
   return (
     <Dialog.Root size="lg" onOpenChange={(e) => setIsOpen(e.open)}>
       <Dialog.Trigger asChild>
-        <Button colorPalette="blue" size="xs">
-          Submit Epoch
-        </Button>
+        <SimpleGrid columns={2} gap="0.5rem">
+          <Button colorPalette="blue" size="xs" variant="outline">
+            Submit Epoch
+          </Button>
+        </SimpleGrid>
       </Dialog.Trigger>
       <Portal>
         <Dialog.Backdrop />
