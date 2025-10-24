@@ -15,11 +15,11 @@ import { injected, walletConnect } from "wagmi/connectors";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
 
-const chain = getChainFromEnv();
+// Create config function that gets called at runtime
+const createWagmiConfig = () => {
+  const chain = getChainFromEnv();
 
-// Create custom config to exclude Coinbase Wallet in development
-const config =
-  process.env.NODE_ENV === "development"
+  return process.env.NODE_ENV === "development"
     ? createConfig({
         chains: [chain],
         connectors: [
@@ -39,6 +39,7 @@ const config =
         chains: [chain],
         ssr: true,
       });
+};
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,8 @@ const rainbowKitTheme: Theme = darkTheme({
 });
 
 export default function App({ Component, pageProps }: AppProps) {
+  const config = createWagmiConfig();
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
