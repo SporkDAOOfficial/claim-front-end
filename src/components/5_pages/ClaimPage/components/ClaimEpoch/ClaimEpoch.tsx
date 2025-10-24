@@ -10,6 +10,7 @@ import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useState, useEffect } from "react";
 import { toaster } from "@/components/ui/toaster";
+import { useUniversalWallet } from "@unicorn.eth/autoconnect";
 
 interface ClaimEpochProps {
   claim: ClaimWithEpoch;
@@ -20,6 +21,7 @@ interface ClaimEpochProps {
 const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
   const { address } = useAccount();
   const [isClaimed, setIsClaimed] = useState<boolean | null>(null);
+  const wallet = useUniversalWallet();
 
   // Write contract hook for claiming
   const {
@@ -56,18 +58,24 @@ const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
   };
 
   // Handle claim transaction
-  const handleClaim = () => {
+  const handleClaim = async () => {
     if (!canClaim()) return;
 
     // Use the stored merkle proof array
     const merkleProof: `0x${string}`[] = claim.proof as `0x${string}`[];
 
-    writeContract({
+    const payload = {
       address: memContractAddress as `0x${string}`,
       abi: memAbi,
       functionName: "claim",
       args: [BigInt(claim.epochId), BigInt(claim.amount), merkleProof],
-    });
+    };
+
+    if (wallet.isUnicorn) {
+      await wallet.unicornWallet.sendTransaction(payload);
+    } else {
+      writeContract(payload);
+    }
   };
 
   // Handle successful claim
