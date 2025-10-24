@@ -1,25 +1,16 @@
-import {
-  Button,
-  Field,
-  FileUpload,
-  Flex,
-  Heading,
-  Input,
-  Separator,
-  Stack,
-  Text,
-} from "@chakra-ui/react";
-import { HiUpload } from "react-icons/hi";
+import { Heading, Separator, Stack, Text } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { toaster } from "@/components/ui/toaster";
-import { useAccount, useSignMessage } from "wagmi";
-import { parseUnits } from "viem";
+import { useAccount } from "wagmi";
 import { isAdmin } from "@/utils/functions";
 import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
 import AdminEpochsTable from "./components/AdminEpochsTable/AdminEpochsTable";
+
 import AdminActions from "./components/AdminActions/AdminActions";
 import TokenClawback from "./components/TokenClawback/TokenClawback";
+import UserEligibilityCheck from "./components/UserEligibilityCheck/UserEligibilityCheck";
+import UploadCsv from "./components/UploadCsv/UploadCsv";
+
 
 export interface Epoch {
   id: number;
@@ -36,20 +27,11 @@ export interface Epoch {
 }
 
 const AdminPage = () => {
-  const [submitting, setSubmitting] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [uploadKey, setUploadKey] = useState(0);
   const [epochs, setEpochs] = useState<Epoch[]>([]);
   const [loadingEpochs, setLoadingEpochs] = useState(false);
 
   const { register, watch, reset } = useForm();
   const { address, isConnected } = useAccount();
-  const { signMessageAsync } = useSignMessage();
-
-  const handleFileChange = async (details: { acceptedFiles: File[] }) => {
-    const newFile = details.acceptedFiles[0] || null;
-    setFile(newFile);
-  };
 
   const fetchEpochs = async () => {
     setLoadingEpochs(true);
@@ -73,112 +55,6 @@ const AdminPage = () => {
       fetchEpochs();
     }
   }, [address]);
-
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    const name = watch("name");
-    const tokenAddress = watch("tokenAddress");
-    const totalAllocation = watch("totalAllocation");
-    const claimDeadline = watch("claimDeadline");
-
-    // Check if wallet is connected
-    if (!isConnected || !address) {
-      toaster.create({
-        title: "Please connect your wallet first",
-        type: "error",
-      });
-      setSubmitting(false);
-      return;
-    }
-
-    // Convert totalAllocation from regular number to wei using wagmi (assuming 18 decimals)
-    const totalAllocationInWei = totalAllocation
-      ? parseUnits(totalAllocation, 18).toString()
-      : null;
-
-    // Convert datetime-local to Unix timestamp (UTC)
-    const claimDeadlineTimestamp = claimDeadline
-      ? Math.floor(new Date(claimDeadline).getTime() / 1000).toString()
-      : null;
-
-    if (
-      file &&
-      tokenAddress &&
-      totalAllocationInWei &&
-      claimDeadlineTimestamp
-    ) {
-      try {
-        // Create message to sign
-        const message = `Create Epoch - Token: ${tokenAddress} - Deadline: ${claimDeadlineTimestamp} - Timestamp: ${Date.now()}`;
-
-        // Request signature from user
-        const signature = await signMessageAsync({ message });
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("name", name || "Epoch");
-        formData.append("tokenAddress", tokenAddress);
-        formData.append("totalAllocation", totalAllocationInWei);
-        formData.append("claimDeadline", claimDeadlineTimestamp);
-        formData.append("signature", signature);
-        formData.append("address", address);
-        formData.append("message", message);
-
-        const response = await fetch("/api/merkle-tree", {
-          method: "POST",
-          body: formData,
-        });
-
-        const result = await response.json();
-
-        // Check if the response is successful
-        if (!response.ok) {
-          console.error("API Error:", result);
-          alert(`Error: ${result.error || "Unknown error occurred"}`);
-          return;
-        }
-
-        // Check if epoch data exists in response
-        if (!result.epoch) {
-          console.error("No epoch data in response:", result);
-          alert("Error: No epoch data received from server");
-          return;
-        }
-
-        toaster.create({
-          title: "Epoch created successfully",
-          type: "success",
-        });
-
-        setFile(null);
-        setUploadKey((prev) => prev + 1); // Force FileUpload to remount
-
-        // Reset form fields with explicit values
-        reset({
-          name: "",
-          tokenAddress: "",
-          totalAllocation: "",
-          claimDeadline: "",
-        });
-
-        // Refresh epochs list
-        fetchEpochs();
-      } catch (error) {
-        console.error("Error uploading file:", error);
-        toaster.create({
-          title: "Error creating epoch",
-          type: "error",
-        });
-      } finally {
-        setSubmitting(false);
-      }
-    } else {
-      toaster.create({
-        title: "Missing required fields or file",
-        type: "error",
-      });
-    }
-  };
 
   if (!address || !isAdmin(address) || !isConnected) {
     return <></>;

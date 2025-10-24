@@ -7,6 +7,7 @@ import { useReadContract } from "wagmi";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useEffect, useState } from "react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface AdminEpochsTableRowProps {
   epoch: Epoch;
@@ -14,6 +15,7 @@ interface AdminEpochsTableRowProps {
 
 const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
   // State to store contract epoch data with defaults
+  const [tokenName, setTokenName] = useState<string>("");
   const [contractData, setContractData] = useState({
     token: "0x0000000000000000000000000000000000000000",
     merkleRoot:
@@ -33,6 +35,28 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
     functionName: "getEpoch",
     args: [BigInt(epoch.id)],
   });
+
+  // Fetch token name from token address contract
+  const { data: tokenNameResult } = useReadContract({
+    address: epoch.tokenAddress as `0x${string}`,
+    abi: [
+      {
+        constant: true,
+        inputs: [],
+        name: "name",
+        outputs: [{ name: "", type: "string" }],
+        type: "function",
+      },
+    ],
+    functionName: "name",
+    query: { enabled: !!epoch.tokenAddress },
+  });
+
+  useEffect(() => {
+    if (tokenNameResult && typeof tokenNameResult === "string") {
+      setTokenName(tokenNameResult);
+    }
+  }, [tokenNameResult, epoch.tokenAddress]);
 
   // Update state when contract data is available
   useEffect(() => {
@@ -89,18 +113,29 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
 
   const epochStatus = getEpochStatus();
 
+  // Check if claim deadline has passed
+  const isDeadlinePassed = () => {
+    const deadline = parseInt(epoch.claimDeadline) * 1000;
+    return Date.now() > deadline;
+  };
+
   return (
     <Table.Row>
       <Table.Cell fontSize="sm">{epoch.id}</Table.Cell>
       <Table.Cell fontSize="sm">{epoch.name}</Table.Cell>
       <Table.Cell fontFamily="mono" fontSize="xs">
-        {epoch.tokenAddress}
+        <Tooltip content={epoch.tokenAddress}>
+          <Text cursor="pointer">{tokenName}</Text>
+        </Tooltip>
       </Table.Cell>
       <Table.Cell fontSize="sm">
         {formatNumber(formatWeiToNumber(contractData.totalClaimed))} /{" "}
         {formatNumber(formatWeiToNumber(epoch.totalAllocation))}
       </Table.Cell>
-      <Table.Cell fontSize="sm">
+      <Table.Cell
+        fontSize="sm"
+        color={isDeadlinePassed() ? "orange.500" : undefined}
+      >
         {new Date(parseInt(epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
       <Table.Cell fontSize="sm">{epoch.claimsCount}</Table.Cell>

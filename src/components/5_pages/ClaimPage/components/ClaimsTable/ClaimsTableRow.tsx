@@ -8,6 +8,7 @@ import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface ClaimsTableRowProps {
   claim: ClaimWithEpoch;
@@ -16,6 +17,7 @@ interface ClaimsTableRowProps {
 const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
   const { address } = useAccount();
 
+  const [tokenName, setTokenName] = useState<string>("");
   // State to store canClaim data with defaults
   const [canClaimData, setCanClaimData] = useState({
     canUserClaim: false,
@@ -33,6 +35,28 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     query: { enabled: !!address },
   });
 
+  // Fetch token name from token address contract
+  const { data: tokenNameResult } = useReadContract({
+    address: claim.epoch.tokenAddress as `0x${string}`,
+    abi: [
+      {
+        constant: true,
+        inputs: [],
+        name: "name",
+        outputs: [{ name: "", type: "string" }],
+        type: "function",
+      },
+    ],
+    functionName: "name",
+    query: { enabled: !!claim.epoch.tokenAddress },
+  });
+
+  useEffect(() => {
+    if (tokenNameResult && typeof tokenNameResult === "string") {
+      setTokenName(tokenNameResult);
+    }
+  }, [tokenNameResult, claim.epoch.tokenAddress]);
+
   // Update state when canClaim data is available
   useEffect(() => {
     if (canClaimResult) {
@@ -46,28 +70,53 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     }
   }, [canClaimResult, claim.epochId]);
 
+  // Check if claim deadline has passed
+  const isDeadlinePassed = () => {
+    const deadline = parseInt(claim.epoch.claimDeadline) * 1000;
+    return Date.now() > deadline;
+  };
+
   return (
     <Table.Row>
       <Table.Cell fontSize="sm">{claim.epoch.name}</Table.Cell>
       <Table.Cell fontFamily="mono" fontSize="xs">
-        {claim.epoch.tokenAddress}
+        <Tooltip content={claim.epoch.tokenAddress}>
+          <Text cursor="pointer">{tokenName}</Text>
+        </Tooltip>
       </Table.Cell>
       <Table.Cell fontSize="sm">
         {formatNumber(formatWeiToNumber(claim.amount))}
       </Table.Cell>
-      <Table.Cell fontSize="sm">
+      <Table.Cell
+        fontSize="sm"
+        color={isDeadlinePassed() ? "orange.500" : undefined}
+      >
         {new Date(parseInt(claim.epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
       <Table.Cell>
         <Text
-          color={claim.epoch.isActive ? "green.500" : "red.500"}
+          color={
+            claim.epoch.isActive
+              ? isDeadlinePassed()
+                ? "orange.500"
+                : "green.500"
+              : "orange.500"
+          }
           fontSize="sm"
         >
-          {claim.epoch.isActive ? "Active" : "Inactive"}
+          {claim.epoch.isActive
+            ? isDeadlinePassed()
+              ? "Expired"
+              : "Active"
+            : "Inactive"}
         </Text>
       </Table.Cell>
       <Table.Cell>
-        <ClaimEpoch claim={claim} disabled={!canClaimData.canUserClaim} />
+        <ClaimEpoch
+          claim={claim}
+          disabled={!canClaimData.canUserClaim}
+          isDeadlinePassed={isDeadlinePassed()}
+        />
       </Table.Cell>
     </Table.Row>
   );
