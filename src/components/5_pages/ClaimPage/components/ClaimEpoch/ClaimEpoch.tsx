@@ -20,7 +20,7 @@ interface ClaimEpochProps {
 
 const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
   const { address } = useAccount();
-  const [isClaimed, setIsClaimed] = useState<boolean | null>(null);
+  const [isClaimed, setIsClaimed] = useState<boolean>(false);
   const wallet = useUniversalWallet();
 
   // Write contract hook for claiming
@@ -95,9 +95,9 @@ const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
         size="xs"
         onClick={handleClaim}
         loading={isClaiming || isConfirming}
-        disabled={!canClaim() || disabled}
+        disabled={!canClaim() || disabled || isClaimed}
       >
-        Claim
+        {isClaimed ? "Claimed" : "Claim"}
       </Button>
     </Flex>
   );
