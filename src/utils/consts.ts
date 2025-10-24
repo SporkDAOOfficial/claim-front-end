@@ -1,4 +1,5 @@
 export const ADMIN_ADDRESSES = [
+  "0xA205846A513fD1fB76Af2D6B4c4cb0f50fB8A205",
   "0xE1f6518037C28753460e0b27Cdac72c82B950e92",
   "0xBB3883F7178C4Ce73e85Ee281f21d62262c3b5d9",
   // Add more admin addresses as needed
