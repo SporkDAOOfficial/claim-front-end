@@ -15,6 +15,7 @@ import { injected, walletConnect } from "wagmi/connectors";
 import { UnicornAutoConnect } from "@unicorn.eth/autoconnect";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
+import { useMemo } from "react";
 
 // Create config function that gets called at runtime
 const createWagmiConfig = () => {
@@ -50,7 +51,7 @@ const rainbowKitTheme: Theme = darkTheme({
 });
 
 export default function App({ Component, pageProps }: AppProps) {
-  const config = createWagmiConfig();
+  const config = useMemo(() => createWagmiConfig(), []);
 
   return (
     <WagmiProvider config={config}>
