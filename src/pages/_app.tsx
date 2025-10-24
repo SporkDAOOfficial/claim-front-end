@@ -10,16 +10,18 @@ import {
   Theme,
 } from "@rainbow-me/rainbowkit";
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { polygon } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { injected, walletConnect } from "wagmi/connectors";
 import "@rainbow-me/rainbowkit/styles.css";
+import { getChainFromEnv } from "@/utils/functions";
+
+const chain = getChainFromEnv();
 
 // Create custom config to exclude Coinbase Wallet in development
 const config =
   process.env.NODE_ENV === "development"
     ? createConfig({
-        chains: [polygon],
+        chains: [chain],
         connectors: [
           injected(),
           walletConnect({
@@ -27,14 +29,14 @@ const config =
           }),
         ],
         transports: {
-          [polygon.id]: http(),
-        },
+          [chain.id]: http(),
+        } as Record<number, ReturnType<typeof http>>,
         ssr: true,
       })
     : getDefaultConfig({
         appName: "MEM",
         projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-        chains: [polygon],
+        chains: [chain],
         ssr: true,
       });
 

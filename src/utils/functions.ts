@@ -1,5 +1,6 @@
 import { ADMIN_ADDRESSES } from "./consts";
 import { formatUnits } from "viem";
+import { polygon, base } from "wagmi/chains";
 
 export const isAdmin = (address: string) => {
   return ADMIN_ADDRESSES.some(
@@ -21,4 +22,11 @@ export const formatWeiToNumber = (
   const weiString = weiAmount.toString();
   const formatted = formatUnits(BigInt(weiString), decimals);
   return parseFloat(formatted);
+};
+
+export const getChainFromEnv = () => {
+  if (process.env.NEXT_PUBLIC_CHAIN_ID === "polygon") {
+    return polygon;
+  }
+  return base;
 };
