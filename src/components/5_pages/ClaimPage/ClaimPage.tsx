@@ -49,9 +49,7 @@ const ClaimPage = () => {
         {address && !isConnected && (
           <Text>Connect your wallet to view your claims.</Text>
         )}
-        {!address && !isConnected && (
-          <Text>Connect your wallet to view your claims.</Text>
-        )}
+        {claims.length === 0 && <Text>No claims found.</Text>}
       </Stack>
     );
   }
