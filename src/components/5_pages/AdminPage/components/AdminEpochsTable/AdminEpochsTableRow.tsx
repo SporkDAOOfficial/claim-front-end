@@ -103,7 +103,15 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       <Table.Cell fontFamily="mono" fontSize="xs">
         <TokenNameSymbol tokenAddress={epoch.tokenAddress as `0x${string}`} />
       </Table.Cell>
-      <Table.Cell fontSize="sm">
+      <Table.Cell
+        fontSize="sm"
+        color={
+          parseInt(contractData.totalClaimed ?? "0") ===
+          parseInt(epoch.totalAllocation ?? "0")
+            ? "orange.500"
+            : undefined
+        }
+      >
         {formatNumber(formatWeiToNumber(contractData.totalClaimed))} /{" "}
         {formatNumber(formatWeiToNumber(epoch.totalAllocation))}
       </Table.Cell>
