@@ -4,6 +4,7 @@ import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useState, useEffect } from "react";
 import { toaster } from "@/components/ui/toaster";
+import { isDeadlinePassed } from "@/utils/functions";
 
 interface AdminEpochActionsProps {
   epochId: number;
@@ -46,12 +47,6 @@ const AdminEpochActions = ({
     useWaitForTransactionReceipt({
       hash: clawbackHash,
     });
-
-  // Check if deadline has passed
-  const isDeadlinePassed = () => {
-    const deadline = parseInt(claimDeadline) * 1000;
-    return Date.now() > deadline;
-  };
 
   // Handle deactivate epoch
   const handleDeactivate = () => {
@@ -164,7 +159,7 @@ const AdminEpochActions = ({
             >
               {isDeactivating
                 ? "Processing..."
-                : isDeadlinePassed()
+                : isDeadlinePassed(claimDeadline)
                 ? "Deactivate & Clawback"
                 : "Deactivate & Clawback"}
             </Button>

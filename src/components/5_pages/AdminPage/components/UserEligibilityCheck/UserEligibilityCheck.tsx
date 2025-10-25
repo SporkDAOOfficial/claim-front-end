@@ -96,14 +96,18 @@ const UserEligibilityCheck = ({
         {...register("userAddress")}
         placeholder="User address"
       />
-      {isLoading ? (
+      {isLoading && watch("userAddress") ? (
         <Skeleton height="20px" width="200px" />
       ) : (
         <Text>
           {!claimResult && !isLoading && "Status unknown"}
-          {claimResult && claimResult.canUserClaim && "✅ Can claim"}
+          {claimResult &&
+            claimResult.canUserClaim &&
+            watch("userAddress") &&
+            "✅ Can claim"}
           {claimResult &&
             !claimResult.canUserClaim &&
+            watch("userAddress") &&
             `❌ Cannot claim: ${claimResult.reason}`}
         </Text>
       )}

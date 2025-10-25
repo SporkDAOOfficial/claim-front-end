@@ -1,5 +1,5 @@
 import { ClaimWithEpoch } from "@/pages/api/claims";
-import { formatNumber } from "@/utils/functions";
+import { formatNumber, isDeadlinePassed } from "@/utils/functions";
 import { formatWeiToNumber } from "@/utils/functions";
 import { Table, Text } from "@chakra-ui/react";
 import ClaimEpoch from "../ClaimEpoch/ClaimEpoch";
@@ -8,21 +8,19 @@ import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { Tooltip } from "@/components/ui/tooltip";
+import TokenNameSymbol from "@/components/1_atoms/TokenNameSymbol/TokenNameSymbol";
 
 interface ClaimsTableRowProps {
   claim: ClaimWithEpoch;
 }
 
 const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
-  const { address } = useAccount();
-
-  const [tokenName, setTokenName] = useState<string>("");
   // State to store canClaim data with defaults
   const [canClaimData, setCanClaimData] = useState({
     canUserClaim: false,
     reason: "Loading...",
   });
+  const { address } = useAccount();
 
   // Read canClaim data from smart contract
   const { data: canClaimResult } = useReadContract({
@@ -34,28 +32,6 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
       : undefined,
     query: { enabled: !!address },
   });
-
-  // Fetch token name from token address contract
-  const { data: tokenNameResult } = useReadContract({
-    address: claim.epoch.tokenAddress as `0x${string}`,
-    abi: [
-      {
-        constant: true,
-        inputs: [],
-        name: "name",
-        outputs: [{ name: "", type: "string" }],
-        type: "function",
-      },
-    ],
-    functionName: "name",
-    query: { enabled: !!claim.epoch.tokenAddress },
-  });
-
-  useEffect(() => {
-    if (tokenNameResult && typeof tokenNameResult === "string") {
-      setTokenName(tokenNameResult);
-    }
-  }, [tokenNameResult, claim.epoch.tokenAddress]);
 
   // Update state when canClaim data is available
   useEffect(() => {
@@ -70,26 +46,22 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     }
   }, [canClaimResult, claim.epochId]);
 
-  // Check if claim deadline has passed
-  const isDeadlinePassed = () => {
-    const deadline = parseInt(claim.epoch.claimDeadline) * 1000;
-    return Date.now() > deadline;
-  };
-
   return (
     <Table.Row>
       <Table.Cell fontSize="sm">{claim.epoch.name}</Table.Cell>
       <Table.Cell fontFamily="mono" fontSize="xs">
-        <Tooltip content={claim.epoch.tokenAddress}>
-          <Text cursor="pointer">{tokenName}</Text>
-        </Tooltip>
+        <TokenNameSymbol
+          tokenAddress={claim.epoch.tokenAddress as `0x${string}`}
+        />
       </Table.Cell>
       <Table.Cell fontSize="sm">
         {formatNumber(formatWeiToNumber(claim.amount))}
       </Table.Cell>
       <Table.Cell
         fontSize="sm"
-        color={isDeadlinePassed() ? "orange.500" : undefined}
+        color={
+          isDeadlinePassed(claim.epoch.claimDeadline) ? "orange.500" : undefined
+        }
       >
         {new Date(parseInt(claim.epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
@@ -97,7 +69,7 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
         <Text
           color={
             claim.epoch.isActive
-              ? isDeadlinePassed()
+              ? isDeadlinePassed(claim.epoch.claimDeadline)
                 ? "orange.500"
                 : "green.500"
               : "orange.500"
@@ -105,7 +77,7 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
           fontSize="sm"
         >
           {claim.epoch.isActive
-            ? isDeadlinePassed()
+            ? isDeadlinePassed(claim.epoch.claimDeadline)
               ? "Expired"
               : "Active"
             : "Inactive"}
@@ -115,7 +87,7 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
         <ClaimEpoch
           claim={claim}
           disabled={!canClaimData.canUserClaim}
-          isDeadlinePassed={isDeadlinePassed()}
+          isDeadlinePassed={isDeadlinePassed(claim.epoch.claimDeadline)}
         />
       </Table.Cell>
     </Table.Row>

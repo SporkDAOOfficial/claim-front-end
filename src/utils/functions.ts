@@ -30,3 +30,9 @@ export const getChainFromEnv = () => {
   }
   return base;
 };
+
+export const isDeadlinePassed = (deadline: string) => {
+  const deadlineTimestamp = parseInt(deadline) * 1000;
+  const deadlineDate = new Date(deadlineTimestamp);
+  return Date.now() > deadlineDate.getTime();
+};
