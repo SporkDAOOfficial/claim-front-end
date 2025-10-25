@@ -28,5 +28,5 @@ export const getChainFromEnv = () => {
   if (process.env.NEXT_PUBLIC_CHAIN_ID === "polygon") {
     return polygon;
   }
-  return base;
+  return polygon;
 };
