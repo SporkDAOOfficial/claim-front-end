@@ -24,24 +24,24 @@ const createWagmiConfig = () => {
 
   return process.env.NODE_ENV === "development"
     ? createConfig({
-        chains: [chain],
-        connectors: [
-          injected(),
-          walletConnect({
-            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
-          }),
-        ],
-        transports: {
-          [chain.id]: http(),
-        } as Record<number, ReturnType<typeof http>>,
-        ssr: true,
-      })
+      chains: [chain],
+      connectors: [
+        injected(),
+        walletConnect({
+          projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
+        }),
+      ],
+      transports: {
+        [chain.id]: http(),
+      } as Record<number, ReturnType<typeof http>>,
+      ssr: true,
+    })
     : getDefaultConfig({
-        appName: "MEM",
-        projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
-        chains: [chain],
-        ssr: true,
-      });
+      appName: "MEM",
+      projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
+      chains: [chain],
+      ssr: true,
+    });
 };
 
 const queryClient = new QueryClient();
