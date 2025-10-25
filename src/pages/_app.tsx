@@ -16,6 +16,7 @@ import { UnicornAutoConnect } from "@unicorn.eth/autoconnect";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
 import { useMemo } from "react";
+import { Analytics } from "@vercel/analytics/next"
 
 // Create config function that gets called at runtime
 const createWagmiConfig = () => {
@@ -27,7 +28,7 @@ const createWagmiConfig = () => {
         connectors: [
           injected(),
           walletConnect({
-            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
+            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
           }),
         ],
         transports: {
@@ -37,7 +38,7 @@ const createWagmiConfig = () => {
       })
     : getDefaultConfig({
         appName: "MEM",
-        projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
+        projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
         chains: [chain],
         ssr: true,
       });
@@ -62,12 +63,13 @@ export default function App({ Component, pageProps }: AppProps) {
               <AppLayout>
                 <Component {...pageProps} />
                 <UnicornAutoConnect
-                  clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || ""}
+                  clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID as string}
                   factoryAddress={
-                    process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || ""
+                    process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS as string
                   }
                   defaultChain="polygon"
                 />
+                <Analytics />
               </AppLayout>
             </ColorModeProvider>
           </ChakraProvider>
