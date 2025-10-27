@@ -9,6 +9,7 @@ import { memContractAddress } from "@/web3/contractAddresses";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import TokenNameSymbol from "@/components/1_atoms/TokenNameSymbol/TokenNameSymbol";
+import { erc20Abi } from "viem";
 
 interface ClaimsTableRowProps {
   claim: ClaimWithEpoch;
@@ -20,6 +21,7 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     canUserClaim: false,
     reason: "Loading...",
   });
+  const [tokenDecimals, setTokenDecimals] = useState<number>(18);
   const { address } = useAccount();
 
   // Read canClaim data from smart contract
@@ -31,6 +33,14 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
       ? [BigInt(claim.epochId), address, BigInt(claim.amount)]
       : undefined,
     query: { enabled: !!address },
+  });
+
+  // Fetch token decimals
+  const { data: decimalsResult } = useReadContract({
+    address: claim.epoch.tokenAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: "decimals",
+    query: { enabled: !!claim.epoch.tokenAddress },
   });
 
   // Update state when canClaim data is available
@@ -46,21 +56,28 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     }
   }, [canClaimResult, claim.epochId]);
 
+  // Update token decimals
+  useEffect(() => {
+    if (decimalsResult !== undefined) {
+      setTokenDecimals(Number(decimalsResult));
+    }
+  }, [decimalsResult]);
+
   return (
-    <Table.Row>
-      <Table.Cell fontSize="sm">{claim.epoch.name}</Table.Cell>
-      <Table.Cell fontFamily="mono" fontSize="xs">
+    <Table.Row _hover={{ bg: "rgba(118, 75, 162, 0.05)" }}>
+      <Table.Cell fontSize="sm" color="gray.100">{claim.epoch.name}</Table.Cell>
+      <Table.Cell fontFamily="mono" fontSize="xs" color="gray.300">
         <TokenNameSymbol
           tokenAddress={claim.epoch.tokenAddress as `0x${string}`}
         />
       </Table.Cell>
-      <Table.Cell fontSize="sm">
-        {formatNumber(formatWeiToNumber(claim.amount))}
+      <Table.Cell fontSize="sm" color="gray.100" fontWeight="medium">
+        {formatNumber(formatWeiToNumber(claim.amount, tokenDecimals), tokenDecimals)}
       </Table.Cell>
       <Table.Cell
         fontSize="sm"
         color={
-          isDeadlinePassed(claim.epoch.claimDeadline) ? "orange.500" : undefined
+          isDeadlinePassed(claim.epoch.claimDeadline) ? "orange.400" : "gray.200"
         }
       >
         {new Date(parseInt(claim.epoch.claimDeadline) * 1000).toLocaleString()}
@@ -70,9 +87,9 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
           color={
             claim.epoch.isActive
               ? isDeadlinePassed(claim.epoch.claimDeadline)
-                ? "orange.500"
-                : "green.500"
-              : "orange.500"
+                ? "orange.400"
+                : "green.400"
+              : "orange.400"
           }
           fontSize="sm"
         >

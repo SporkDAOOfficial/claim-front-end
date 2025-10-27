@@ -10,7 +10,7 @@ import {
   getAddress,
 } from "viem";
 import { prisma } from "../../lib/prisma";
-import { ADMIN_ADDRESSES } from "@/utils/consts";
+import { isAdmin, isCreator } from "@/lib/contractUtils";
 
 export interface ClaimData {
   address: string;
@@ -38,7 +38,7 @@ export const config = {
 };
 
 /**
- * Verify signature and check if address is in admin whitelist
+ * Verify signature and check if address has admin role on contract
  */
 async function verifyAdminSignature(
   address: string,
@@ -58,12 +58,11 @@ async function verifyAdminSignature(
       return false;
     }
 
-    // Check if address is in admin whitelist
-    const isAdmin = ADMIN_ADDRESSES.some(
-      (adminAddr) => adminAddr.toLowerCase() === address.toLowerCase()
-    );
+    // Check if address has admin role on the contract
+    const hasAdminRole = await isAdmin(address);
+    const hasCreatorRole = await isCreator(address);
 
-    if (!isAdmin) {
+    if (!hasAdminRole) {
       return false;
     }
 

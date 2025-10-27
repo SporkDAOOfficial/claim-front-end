@@ -15,7 +15,6 @@ import { injected, walletConnect } from "wagmi/connectors";
 import { UnicornAutoConnect } from "@unicorn.eth/autoconnect";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
-import { useMemo } from "react";
 
 // Create config function that gets called at runtime
 const createWagmiConfig = () => {
@@ -25,9 +24,12 @@ const createWagmiConfig = () => {
     ? createConfig({
         chains: [chain],
         connectors: [
-          injected(),
+          injected({
+            shimDisconnect: false,
+          }),
           walletConnect({
             projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
+            showQrModal: true,
           }),
         ],
         transports: {
@@ -43,18 +45,26 @@ const createWagmiConfig = () => {
       });
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const rainbowKitTheme: Theme = darkTheme({
   accentColor: "#A3CFFF",
   accentColorForeground: "black",
 });
 
-export default function App({ Component, pageProps }: AppProps) {
-  const config = useMemo(() => createWagmiConfig(), []);
+// Create config once and reuse it
+const wagmiConfig = createWagmiConfig();
 
+export default function App({ Component, pageProps }: AppProps) {
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={rainbowKitTheme}>
           <ChakraProvider value={system}>

@@ -795,4 +795,25 @@ export const memAbi = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    inputs: [],
+    name: "getAdminAddresses",
+    outputs: [{ internalType: "address[]", name: "adminAddresses", type: "address[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getCreatorAddresses",
+    outputs: [{ internalType: "address[]", name: "creatorAddresses", type: "address[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getOwnerAddresses",
+    outputs: [{ internalType: "address[]", name: "ownerAddresses", type: "address[]" }],
+    stateMutability: "view",
+    type: "function",
+  },
 ];

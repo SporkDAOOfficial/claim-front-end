@@ -17,11 +17,19 @@ const nextConfig: NextConfig = {
       fs: false,
       net: false,
       tls: false,
+      '@react-native-async-storage/async-storage': false,
     };
 
-    // Suppress specific warnings
+    // Ignore warnings
     config.ignoreWarnings = [
-      /Module not found: Can't resolve '@react-native-async-storage\/async-storage'/,
+      {
+        module: /node_modules\/@metamask\/sdk/,
+        message: /Module not found.*async-storage/,
+      },
+      {
+        module: /node_modules\/@metamask\/sdk/,
+        message: /Can't resolve '.*react-native.*'/,
+      },
       /Critical dependency: the request of a dependency is an expression/,
       /CommonJS module.*is loading ES Module/,
     ];
