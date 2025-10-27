@@ -8,8 +8,19 @@ export const isAdmin = (address: string) => {
   );
 };
 
-export const formatNumber = (amount: string | number) => {
-  return parseFloat(amount.toString()).toLocaleString("en-US", {
+export const formatNumber = (amount: string | number, decimals?: number) => {
+  const num = parseFloat(amount.toString());
+  
+  // If decimals are specified, use them for formatting
+  if (decimals !== undefined) {
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: Math.min(2, decimals),
+      maximumFractionDigits: decimals,
+    });
+  }
+  
+  // Default behavior: show 2 decimals
+  return num.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -29,4 +40,10 @@ export const getChainFromEnv = () => {
     return polygon;
   }
   return polygon;
+};
+
+export const isDeadlinePassed = (deadline: string) => {
+  const deadlineTimestamp = parseInt(deadline) * 1000;
+  const deadlineDate = new Date(deadlineTimestamp);
+  return Date.now() > deadlineDate.getTime();
 };

@@ -3,14 +3,42 @@ import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 
 export const useRoleCheck = (address?: string) => {
+  // First, get the role constants from the contract
+  const { data: adminRoleHash, isLoading: isAdminRoleLoading } = useReadContract({
+    address: memContractAddress as `0x${string}`,
+    abi: memAbi,
+    functionName: "ADMIN_ROLE",
+    query: {
+      enabled: true,
+    },
+  });
+
+  const { data: creatorRoleHash, isLoading: isCreatorRoleLoading } = useReadContract({
+    address: memContractAddress as `0x${string}`,
+    abi: memAbi,
+    functionName: "CREATOR_ROLE",
+    query: {
+      enabled: true,
+    },
+  });
+
+  const { data: ownerRoleHash, isLoading: isOwnerRoleLoading } = useReadContract({
+    address: memContractAddress as `0x${string}`,
+    abi: memAbi,
+    functionName: "DEFAULT_ADMIN_ROLE",
+    query: {
+      enabled: true,
+    },
+  });
+
   // Check if address has admin role
   const { data: hasAdminRole, isLoading: isAdminLoading } = useReadContract({
     address: memContractAddress as `0x${string}`,
     abi: memAbi,
     functionName: "hasRole",
-    args: address ? ["0x0000000000000000000000000000000000000000000000000000000000000000", address as `0x${string}`] : undefined, // DEFAULT_ADMIN_ROLE
+    args: address && adminRoleHash ? [adminRoleHash as `0x${string}`, address as `0x${string}`] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!address && !!adminRoleHash,
     },
   });
 
@@ -19,15 +47,30 @@ export const useRoleCheck = (address?: string) => {
     address: memContractAddress as `0x${string}`,
     abi: memAbi,
     functionName: "hasRole",
-    args: address ? ["0x0000000000000000000000000000000000000000000000000000000000000001", address as `0x${string}`] : undefined, // CREATOR_ROLE
+    args: address && creatorRoleHash ? [creatorRoleHash as `0x${string}`, address as `0x${string}`] : undefined,
     query: {
-      enabled: !!address,
+      enabled: !!address && !!creatorRoleHash,
+    },
+  });
+
+  // Check if address has DEFAULT_ADMIN_ROLE (full admin/owner)
+  const { data: hasOwnerRole, isLoading: isOwnerLoading } = useReadContract({
+    address: memContractAddress as `0x${string}`,
+    abi: memAbi,
+    functionName: "hasRole",
+    args: address && ownerRoleHash ? [ownerRoleHash as `0x${string}`, address as `0x${string}`] : undefined,
+    query: {
+      enabled: !!address && !!ownerRoleHash,
     },
   });
 
   return {
-    isAdmin: hasAdminRole as boolean || false,
-    isCreator: hasCreatorRole as boolean || false,
-    isLoading: isAdminLoading || isCreatorLoading,
+    // ADMIN_ROLE or DEFAULT_ADMIN_ROLE
+    isAdmin: (hasAdminRole as boolean) || (hasOwnerRole as boolean) || false,
+    // CREATOR_ROLE or DEFAULT_ADMIN_ROLE
+    isCreator: (hasCreatorRole as boolean) || (hasOwnerRole as boolean) || false,
+    // Only DEFAULT_ADMIN_ROLE
+    isOwner: (hasOwnerRole as boolean) || false,
+    isLoading: isAdminRoleLoading || isCreatorRoleLoading || isOwnerLoading || isAdminLoading || isCreatorLoading || isOwnerLoading,
   };
 };

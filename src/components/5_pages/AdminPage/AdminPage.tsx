@@ -2,13 +2,15 @@ import { Heading, Separator, Stack, Text } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useAccount } from "wagmi";
-import { isAdmin } from "@/utils/functions";
+import { useRoleCheck } from "@/hooks/useRoleCheck";
 import LoadingPage from "@/components/1_atoms/LoadingPage/LoadingPage";
 import AdminEpochsTable from "./components/AdminEpochsTable/AdminEpochsTable";
 import UserEligibilityCheck from "./components/UserEligibilityCheck/UserEligibilityCheck";
 import UploadCsv from "./components/UploadCsv/UploadCsv";
 import AdminActions from "./components/AdminActions/AdminActions";
 import TokenClawback from "./components/TokenClawback/TokenClawback";
+import RoleHoldersList from "./components/RoleHoldersList/RoleHoldersList";
+import SEO from "@/components/1_atoms/SEO/SEO";
 
 export interface Epoch {
   id: number;
@@ -28,8 +30,9 @@ const AdminPage = () => {
   const [epochs, setEpochs] = useState<Epoch[]>([]);
   const [loadingEpochs, setLoadingEpochs] = useState(false);
 
-  const { register, watch, reset } = useForm();
+  const { register, watch, reset, setValue } = useForm();
   const { address, isConnected } = useAccount();
+  const { isAdmin, isLoading: isRoleLoading } = useRoleCheck(address);
 
   const fetchEpochs = async () => {
     setLoadingEpochs(true);
@@ -49,12 +52,12 @@ const AdminPage = () => {
   };
 
   useEffect(() => {
-    if (address && isAdmin(address)) {
+    if (address && isAdmin && !isRoleLoading) {
       fetchEpochs();
     }
-  }, [address]);
+  }, [address, isAdmin, isRoleLoading]);
 
-  if (!address || !isAdmin(address) || !isConnected) {
+  if (!address || !isAdmin || !isConnected || isRoleLoading) {
     return <></>;
   }
 
@@ -63,16 +66,23 @@ const AdminPage = () => {
   }
 
   return (
-    <Stack gap="2rem">
+    <>
+      <SEO 
+        title="Admin Dashboard - MEM Patronage Claims"
+        description="Admin dashboard for managing MEM patronage claim epochs and tokens."
+      />
+      <Stack gap="2rem">
       <Heading>Create Epoch</Heading>
       <Stack direction="row" gap="1rem">
         <UploadCsv
           register={register}
           watch={watch}
           reset={reset}
+          setValue={setValue}
           fetchEpochs={fetchEpochs}
           address={address}
           isConnected={isConnected}
+          epochs={epochs}
         />
         <UserEligibilityCheck
           watch={watch}
@@ -90,8 +100,10 @@ const AdminPage = () => {
         )}
       </Stack>
       <AdminActions />
+      <RoleHoldersList />
       <TokenClawback />
     </Stack>
+    </>
   );
 };
 

@@ -1,65 +1,86 @@
 import { ColorModeButton } from "@/components/ui/color-mode";
-import { Icon, Stack, Text } from "@chakra-ui/react";
+import { Stack, Text, Image, Box } from "@chakra-ui/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { FaOctopusDeploy } from "react-icons/fa";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
-import { isAdmin } from "@/utils/functions";
+import { useRoleCheck } from "@/hooks/useRoleCheck";
 
 const NavBar = () => {
   const router = useRouter();
   const { address } = useAccount();
+  const { isAdmin, isLoading } = useRoleCheck(address);
 
   return (
-    <Stack
+    <Box
       w="100%"
-      direction="row"
-      alignItems="center"
-      justifyContent="space-between"
-      py="1rem"
+      borderBottom="1px solid"
+      borderColor="purple.900"
+      background="rgba(0, 0, 0, 0.5)"
+      backdropFilter="blur(10px)"
     >
-      <Link href="/">
-        <Stack
-          direction="row"
-          alignItems="center"
-          gap="1rem"
-          justifyContent="space-between"
-        >
-          <Icon
-            size="xl"
-            color={router.pathname === "/" ? "blue.300" : undefined}
-          >
-            <FaOctopusDeploy />
-          </Icon>
-        </Stack>
-      </Link>
-
-      <Stack direction="row" alignItems="center" gap="2rem">
-        <Link href="/claim">
-          <Text
-            _hover={{ textDecoration: "underline" }}
-            fontWeight="bold"
-            color={router.pathname === "/claim" ? "blue.300" : undefined}
-          >
-            Claim
-          </Text>
-        </Link>
-        {address && isAdmin(address) && (
-          <Link href="/admin">
+      <Stack
+        maxW="container.xl"
+        mx="auto"
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        py={{ base: "1rem", md: "1.5rem" }}
+        px={{ base: "1rem", md: "1.5rem", lg: "2rem" }}
+        gap={{ base: "1rem", md: "2rem" }}
+      >
+        <Stack direction="row" alignItems="center" gap={{ base: "1rem", md: "2rem" }}>
+          <a href="https://ethdenver.com" target="_blank" rel="noopener noreferrer">
+            <Image 
+              src="/images/hero/ethdenver_logo.svg"
+              alt="ETHDenver"
+              height={{ base: "32px", md: "40px" }}
+              filter="brightness(1.2)"
+            />
+          </a>
+          <Link href="/">
             <Text
-              _hover={{ textDecoration: "underline" }}
+              _hover={{ opacity: 0.8 }}
               fontWeight="bold"
-              color={router.pathname === "/admin" ? "blue.300" : undefined}
+              fontSize={{ base: "xs", md: "sm" }}
+              letterSpacing="0.05em"
+              textTransform="uppercase"
+              style={{
+                background: "linear-gradient(135deg, #f093fb 0%, #667eea 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
-              Admin
+              <Text as="span" display={{ base: "none", md: "inline" }}>Member Claims</Text>
+              <Text as="span" display={{ base: "inline", md: "none" }}>Claims</Text>
             </Text>
           </Link>
-        )}
-        <ConnectButton />
-        <ColorModeButton />
+        </Stack>
+
+        <Stack direction="row" alignItems="center" gap={{ base: "0.75rem", md: "1.5rem", lg: "2rem" }}>
+          {address && !isLoading && isAdmin && (
+            <Link href="/admin">
+              <Text
+                _hover={{ 
+                  textDecoration: "underline",
+                  opacity: 0.8
+                }}
+                fontWeight="bold"
+                color={router.pathname === "/admin" ? "pink.400" : "white"}
+                fontSize="sm"
+                letterSpacing="0.05em"
+                textTransform="uppercase"
+              >
+                Admin
+              </Text>
+            </Link>
+          )}
+          <ConnectButton />
+          <ColorModeButton />
+        </Stack>
       </Stack>
-    </Stack>
+    </Box>
   );
 };
 
