@@ -15,6 +15,7 @@ import { injected, walletConnect } from "wagmi/connectors";
 import { UnicornAutoConnect } from "@unicorn.eth/autoconnect";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
+import { Analytics } from "@vercel/analytics/next"
 
 // Create config function that gets called at runtime
 const createWagmiConfig = () => {
@@ -22,27 +23,24 @@ const createWagmiConfig = () => {
 
   return process.env.NODE_ENV === "development"
     ? createConfig({
-        chains: [chain],
-        connectors: [
-          injected({
-            shimDisconnect: false,
-          }),
-          walletConnect({
-            projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-            showQrModal: true,
-          }),
-        ],
-        transports: {
-          [chain.id]: http(),
-        } as Record<number, ReturnType<typeof http>>,
-        ssr: true,
-      })
+      chains: [chain],
+      connectors: [
+        injected(),
+        walletConnect({
+          projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
+        }),
+      ],
+      transports: {
+        [chain.id]: http(),
+      } as Record<number, ReturnType<typeof http>>,
+      ssr: true,
+    })
     : getDefaultConfig({
-        appName: "MEM",
-        projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-        chains: [chain],
-        ssr: true,
-      });
+      appName: "MEM",
+      projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID as string,
+      chains: [chain],
+      ssr: true,
+    });
 };
 
 const queryClient = new QueryClient({
@@ -72,12 +70,13 @@ export default function App({ Component, pageProps }: AppProps) {
               <AppLayout>
                 <Component {...pageProps} />
                 <UnicornAutoConnect
-                  clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || ""}
+                  clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID as string}
                   factoryAddress={
-                    process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || ""
+                    process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS as string
                   }
                   defaultChain="polygon"
                 />
+                <Analytics />
               </AppLayout>
             </ColorModeProvider>
           </ChakraProvider>
