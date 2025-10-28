@@ -15,6 +15,7 @@ import { injected, walletConnect } from "wagmi/connectors";
 import { UnicornAutoConnect, unicornConnector } from "@unicorn.eth/autoconnect";
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
+import { Analytics } from "@vercel/analytics/next"
 
 // Create config function that gets called at runtime
 const createWagmiConfig = () => {
