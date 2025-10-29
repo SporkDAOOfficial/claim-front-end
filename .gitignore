@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+yarn.lock
 
 # testing
 /coverage
@@ -42,3 +43,5 @@ next-env.d.ts
 
 /src/generated/prisma
 .env*.local
+yarn.lock
+*.lock

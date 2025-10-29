@@ -13,22 +13,23 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { injected, walletConnect } from "wagmi/connectors";
 import { UnicornAutoConnect, unicornConnector } from "@unicorn.eth/autoconnect";
+import { useConnect } from 'wagmi';
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
 import { Analytics } from "@vercel/analytics/next"
+import { UnicornAutoConnectWrapper } from '@/components/UnicornAutoConnectWrapper';
+
 
 // Create config function that gets called at runtime
+const chain = getChainFromEnv();
+console.log("Chain:",  chain);
 const createWagmiConfig = () => {
-  const chain = getChainFromEnv();
-
     // Map chain ID to Thirdweb chain name
   const getChainName = () => {
     const chainMap: Record<number, string> = {
       8453: 'base',
       137: 'polygon',
-      1: 'mainnet',
-      42161: 'arbitrum',
-      10: 'optimism',
+      1: 'mainnet'
     };
     return chainMap[chain.id] || 'polygon';
   };
@@ -53,7 +54,7 @@ const createWagmiConfig = () => {
           clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
           factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
           debug: true,
-          defaultChain: chainName,
+          defaultChain: chain.id,
         }),
       ],
       transports: {
@@ -77,7 +78,7 @@ const createWagmiConfig = () => {
         chains: [chain],
         clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
         factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
-        defaultChain: chainName,
+        defaultChain: chain.id,
         debug: false,
       })
     );
@@ -104,19 +105,12 @@ const rainbowKitTheme: Theme = darkTheme({
 const wagmiConfig = createWagmiConfig();
 
 export default function App({ Component, pageProps }: AppProps) {
+
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={rainbowKitTheme}>
-          <UnicornAutoConnect 
-            clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID} 
-            factoryAddress={process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS}
-            defaultChain="polygon"
-            debug={true}
-            timeout={30000}
-            onSuccess={() => console.log('🦄 Unicorn wallet auto-connected!')}
-            onError={(err) => console.error('❌ Unicorn auto-connect failed:', err)}
-          />
+          <UnicornAutoConnectWrapper />
           <ChakraProvider value={system}>
             <ColorModeProvider>
               <AppLayout>
