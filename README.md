@@ -1,41 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# SporkDAO Patronage Claims Frontend
 
-## Getting Started
+Next.js + RainbowKit/Wagmi app with optional Unicorn wallet auto-connect.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 20+ (NVM recommended)
+- Environment variables set in `.env.local`:
+
+```bash
+NEXT_PUBLIC_WC_PROJECT_ID=...
+NEXT_PUBLIC_THIRDWEB_CLIENT_ID=...
+NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS=0x...
+NEXT_PUBLIC_CHAIN="base" # or polygon, mainnet, etc
+```
+
+## Install
+
+Because `@unicorn.eth/autoconnect` currently declares peer dependencies for React 18 while this app uses React 19, you may need to bypass peer resolution. Two options:
+
+### npm (recommended here)
+
+```bash
+npm install --legacy-peer-deps
+```
+
+If you already ran install and hit ERESOLVE, re-run with the flag:
+
+```bash
+npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+```
+
+### Yarn Classic
+
+Yarn 1 ignores peer dependency failures by default. Simply run:
+
+```bash
+yarn install
+```
+
+If you prefer strict resolution with Yarn Berry/Modern, configure `packageExtensions` accordingly or fall back to `npm install --legacy-peer-deps`.
+
+## Development
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at http://localhost:3000.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Build
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+```bash
+npm run build
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## Notes on Unicorn Wallet
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Unicorn is required by product requirements.
+- The package exports runtime APIs compatible with React 19, but its peer deps target React 18, hence the install flag above.
+- We add a small local type augmentation at `src/types/unicorn-autoconnect.d.ts` to expose `unicornConnector` in TypeScript.
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- Next.js 15
+- React 19
+- RainbowKit / Wagmi v2
+- Prisma
+- Chakra UI
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+## Troubleshooting
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
-# mem-frontend
+- Install errors (ERESOLVE): use `npm install --legacy-peer-deps`.
+- Types complaining about `unicornConnector`: ensure `src/types/unicorn-autoconnect.d.ts` exists and `tsconfig.json` includes `**/*.d.ts` (default here).
