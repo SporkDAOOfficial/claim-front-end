@@ -25,14 +25,12 @@ const createWagmiConfig = () => {
   const getChainName = () => {
     const chainMap: Record<number, string> = {
       8453: 'base',
-      84532: 'baseSepolia', 
       137: 'polygon',
       1: 'mainnet',
       42161: 'arbitrum',
       10: 'optimism',
-      11155111: 'sepolia',
     };
-    return chainMap[chain.id] || 'base';
+    return chainMap[chain.id] || 'polygon';
   };
   const chainName = getChainName ();
   console.log("Chain Name:",  chainName);  
