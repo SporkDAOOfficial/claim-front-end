@@ -11,7 +11,7 @@ Next.js + RainbowKit/Wagmi app with optional Unicorn wallet auto-connect.
 NEXT_PUBLIC_WC_PROJECT_ID=...
 NEXT_PUBLIC_THIRDWEB_CLIENT_ID=...
 NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS=0x...
-NEXT_PUBLIC_CHAIN="base" # or polygon, mainnet, etc
+NEXT_PUBLIC_CHAIN="polygon" 
 ```
 
 ## Install
@@ -32,7 +32,7 @@ npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
 ### Yarn Classic
 
-Yarn 1 ignores peer dependency failures by default. Simply run:
+Yarn ignores peer dependency failures by default. Simply run:
 
 ```bash
 yarn install
