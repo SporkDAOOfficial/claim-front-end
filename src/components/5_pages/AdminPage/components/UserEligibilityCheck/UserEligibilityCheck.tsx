@@ -1,9 +1,6 @@
 import { Input, NativeSelect, Skeleton, Stack, Text } from "@chakra-ui/react";
 import { Epoch } from "../../AdminPage";
 import { useEffect, useState } from "react";
-import { useReadContract } from "wagmi";
-import { memContractAddress } from "@/web3/contractAddresses";
-import { memAbi } from "@/web3/abis/mem_abi";
 import { FieldValues, UseFormRegister } from "react-hook-form";
 
 interface UserEligibilityCheckProps {
@@ -22,42 +19,48 @@ const UserEligibilityCheck = ({
   const [claimResult, setClaimResult] = useState<{
     canUserClaim: boolean;
     reason: string;
+    claimData?: {
+      amount: string;
+      proof: string;
+    };
   } | null>(null);
 
-  // Read canClaim from smart contract when we have both epochId and userAddress
-  const { data: canClaimResult, isPending } = useReadContract({
-    address: memContractAddress as `0x${string}`,
-    abi: memAbi,
-    functionName: "canClaim",
-    args:
-      selectedEpochId && watch("userAddress")
-        ? [
-            BigInt(selectedEpochId),
-            watch("userAddress") as `0x${string}`,
-            BigInt(0),
-          ] // amount is 0 for checking eligibility
-        : undefined,
-    query: {
-      enabled: !!(selectedEpochId && watch("userAddress")),
-    },
-  });
+  // Check user eligibility from database
+  const checkUserEligibility = async (address: string, epochId: number) => {
+    if (!address || !epochId) return;
 
-  // Update claim result when contract result is available
-  useEffect(() => {
-    if (canClaimResult !== undefined) {
-      const data = canClaimResult as readonly [boolean, string];
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `/api/user-eligibility?address=${address}&epochId=${epochId}`
+      );
+      const data = await response.json();
+
       setClaimResult({
-        canUserClaim: data[0],
-        reason: data[1],
+        canUserClaim: data.canUserClaim,
+        reason: data.reason,
+        claimData: data.claimData,
       });
+    } catch (error) {
+      console.error("Error checking eligibility:", error);
+      setClaimResult({
+        canUserClaim: false,
+        reason: "Error checking eligibility",
+      });
+    } finally {
       setIsLoading(false);
     }
-  }, [canClaimResult]);
+  };
 
-  // Update loading state when contract call is pending
+  // Check eligibility when epoch or address changes
+  const userAddress = watch("userAddress");
   useEffect(() => {
-    setIsLoading(isPending);
-  }, [isPending]);
+    if (selectedEpochId && userAddress) {
+      checkUserEligibility(userAddress, selectedEpochId);
+    } else {
+      setClaimResult(null);
+    }
+  }, [selectedEpochId, userAddress]);
 
   return (
     <Stack
@@ -99,17 +102,27 @@ const UserEligibilityCheck = ({
       {isLoading && watch("userAddress") ? (
         <Skeleton height="20px" width="200px" />
       ) : (
-        <Text>
-          {!claimResult && !isLoading && "Status unknown"}
-          {claimResult &&
-            claimResult.canUserClaim &&
-            watch("userAddress") &&
-            "✅ Can claim"}
-          {claimResult &&
-            !claimResult.canUserClaim &&
-            watch("userAddress") &&
-            `❌ Cannot claim: ${claimResult.reason}`}
-        </Text>
+        <Stack gap="0.5rem">
+          <Text>
+            {!claimResult && !isLoading && "Status unknown"}
+            {claimResult &&
+              claimResult.canUserClaim &&
+              watch("userAddress") &&
+              "✅ Can claim"}
+            {claimResult &&
+              !claimResult.canUserClaim &&
+              watch("userAddress") &&
+              `❌ Cannot claim: ${claimResult.reason}`}
+          </Text>
+          {claimResult?.canUserClaim && claimResult.claimData && (
+            <Stack gap="0.25rem" fontSize="xs" color="fg.muted">
+              <Text>Amount: {claimResult.claimData.amount}</Text>
+              <Text>
+                Proof available: {claimResult.claimData.proof ? "Yes" : "No"}
+              </Text>
+            </Stack>
+          )}
+        </Stack>
       )}
     </Stack>
   );

@@ -1,17 +1,13 @@
 import { Table, Text, Flex } from "@chakra-ui/react";
 import { Epoch } from "../../AdminPage";
-import {
-  formatNumber,
-  formatWeiToNumber,
-  isDeadlinePassed,
-} from "@/utils/functions";
+import { formatNumber, formatWeiToNumber } from "@/utils/functions";
 import SubmitOnChainEpochModal from "../SubmitOnChainEpochModal/SubmitOnChainEpochModal";
 import AdminEpochActions from "../AdminEpochActions/AdminEpochActions";
 import { useReadContract } from "wagmi";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useEffect, useState } from "react";
-import TokenNameSymbol from "@/components/1_atoms/TokenNameSymbol/TokenNameSymbol";
+import { Tooltip } from "@/components/ui/tooltip";
 
 interface AdminEpochsTableRowProps {
   epoch: Epoch;
@@ -19,6 +15,7 @@ interface AdminEpochsTableRowProps {
 
 const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
   // State to store contract epoch data with defaults
+  const [tokenName, setTokenName] = useState<string>("");
   const [contractData, setContractData] = useState({
     token: "0x0000000000000000000000000000000000000000",
     merkleRoot:
@@ -42,6 +39,30 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
     functionName: "getEpoch",
     args: [BigInt(epoch.id)],
   });
+
+  console.log(contractEpochData);
+
+  // Fetch token name from token address contract
+  const { data: tokenNameResult } = useReadContract({
+    address: epoch.tokenAddress as `0x${string}`,
+    abi: [
+      {
+        constant: true,
+        inputs: [],
+        name: "name",
+        outputs: [{ name: "", type: "string" }],
+        type: "function",
+      },
+    ],
+    functionName: "name",
+    query: { enabled: !!epoch.tokenAddress },
+  });
+
+  useEffect(() => {
+    if (tokenNameResult && typeof tokenNameResult === "string") {
+      setTokenName(tokenNameResult);
+    }
+  }, [tokenNameResult, epoch.tokenAddress]);
 
   // Update state when contract data is available
   useEffect(() => {
@@ -84,13 +105,18 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
   // Check if clawback is possible (has unclaimed tokens)
   const canClawback = parseInt(contractData.unclaimed) > 0;
 
+  // Check if claim deadline has passed
+  const isDeadlinePassed = () => {
+    const deadline = parseInt(contractData.claimDeadline) * 1000;
+    return Date.now() > deadline;
+  };
+
   // Determine the actual status based on contract active state and deadline
   const getEpochStatus = () => {
     if (isLoadingContractData) return { text: "Loading...", color: "gray.500" };
     if (contractError) return { text: "Error", color: "red.500" };
     if (!contractData.active) return { text: "Inactive", color: "orange.500" };
-    if (isDeadlinePassed(contractData.claimDeadline))
-      return { text: "Expired", color: "red.500" };
+    if (isDeadlinePassed()) return { text: "Expired", color: "red.500" };
     return { text: "Active", color: "green.500" };
   };
 
@@ -101,23 +127,17 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       <Table.Cell fontSize="sm">{epoch.id}</Table.Cell>
       <Table.Cell fontSize="sm">{epoch.name}</Table.Cell>
       <Table.Cell fontFamily="mono" fontSize="xs">
-        <TokenNameSymbol tokenAddress={epoch.tokenAddress as `0x${string}`} />
+        <Tooltip content={epoch.tokenAddress}>
+          <Text cursor="pointer">{tokenName}</Text>
+        </Tooltip>
       </Table.Cell>
-      <Table.Cell
-        fontSize="sm"
-        color={
-          parseInt(contractData.totalClaimed ?? "0") ===
-          parseInt(epoch.totalAllocation ?? "0")
-            ? "orange.500"
-            : undefined
-        }
-      >
+      <Table.Cell fontSize="sm">
         {formatNumber(formatWeiToNumber(contractData.totalClaimed))} /{" "}
         {formatNumber(formatWeiToNumber(epoch.totalAllocation))}
       </Table.Cell>
       <Table.Cell
         fontSize="sm"
-        color={isDeadlinePassed(epoch.claimDeadline) ? "red.500" : undefined}
+        color={isDeadlinePassed() ? "red.500" : undefined}
       >
         {new Date(parseInt(epoch.claimDeadline) * 1000).toLocaleString()}
       </Table.Cell>
