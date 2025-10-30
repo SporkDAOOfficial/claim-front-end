@@ -11,12 +11,12 @@ interface SEOProps {
 }
 
 const SEO = ({
-  title = "SporkDAO Patronage Claims - ETH Denver",
-  description = "Claim your member patronage tokens from previous years at ETH Denver. Connect your wallet to view and claim your tokens.",
-  image = "/og-image.png",
-  url = "https://claims.sporkdao.org",
+  title = "SporkDAO Patronage Claims",
+  description = "Claim your SporkDAO patronage tokens. Connect your wallet to view eligibility and claim.",
+  image = "https://claim.sporkdao.org/images/hero/SPORKDAO_coin_holo.png",
+  url = "https://claim.sporkdao.org",
   type = "website",
-  siteName = "SporkDAO Patronage Claims - ETH Denver",
+  siteName = "SporkDAO Patronage Claims",
   twitterHandle = "@EthereumDenver",
 }: SEOProps) => {
   return (
@@ -32,13 +32,14 @@ const SEO = ({
       <link rel="shortcut icon" href="/images/hero/SporkDAO_logo.svg" />
       <link rel="canonical" href={url} />
 
-      {/* Open Graph / Facebook */}
+      {/* Open Graph */}
       <meta property="og:type" content={type} />
       <meta property="og:url" content={url} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={image} />
       <meta property="og:site_name" content={siteName} />
+      <meta property="og:locale" content="en_US" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />

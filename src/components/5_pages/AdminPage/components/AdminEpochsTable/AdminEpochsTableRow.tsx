@@ -1,13 +1,17 @@
-import { Table, Text, Flex } from "@chakra-ui/react";
+import { Table, Text, Flex, Button } from "@chakra-ui/react";
 import { Epoch } from "../../AdminPage";
 import { formatNumber, formatWeiToNumber } from "@/utils/functions";
 import SubmitOnChainEpochModal from "../SubmitOnChainEpochModal/SubmitOnChainEpochModal";
 import AdminEpochActions from "../AdminEpochActions/AdminEpochActions";
+import RescaleEditEpochModal from "../RescaleEditEpochModal/RescaleEditEpochModal";
+import ReuploadCsvModal from "../ReuploadCsvModal/ReuploadCsvModal";
 import { useReadContract } from "wagmi";
+import { erc20Abi } from "viem";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
 import { useEffect, useState } from "react";
 import { Tooltip } from "@/components/ui/tooltip";
+import DeleteEpochModal from "../DeleteEpochModal/DeleteEpochModal";
 
 interface AdminEpochsTableRowProps {
   epoch: Epoch;
@@ -27,6 +31,7 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
     unclaimed: "0",
   });
   const [isLoadingContractData, setIsLoadingContractData] = useState(true);
+  const [tokenDecimals, setTokenDecimals] = useState<number>(18);
 
   // Read epoch data from smart contract
   const {
@@ -58,11 +63,25 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
     query: { enabled: !!epoch.tokenAddress },
   });
 
+  // Fetch token decimals for proper formatting
+  const { data: decimalsResult } = useReadContract({
+    address: epoch.tokenAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: "decimals",
+    query: { enabled: !!epoch.tokenAddress },
+  });
+
   useEffect(() => {
     if (tokenNameResult && typeof tokenNameResult === "string") {
       setTokenName(tokenNameResult);
     }
   }, [tokenNameResult, epoch.tokenAddress]);
+
+  useEffect(() => {
+    if (decimalsResult !== undefined) {
+      setTokenDecimals(Number(decimalsResult));
+    }
+  }, [decimalsResult]);
 
   // Update state when contract data is available
   useEffect(() => {
@@ -122,6 +141,7 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
 
   const epochStatus = getEpochStatus();
 
+
   return (
     <Table.Row>
       <Table.Cell fontSize="sm">{epoch.id}</Table.Cell>
@@ -132,8 +152,14 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
         </Tooltip>
       </Table.Cell>
       <Table.Cell fontSize="sm">
-        {formatNumber(formatWeiToNumber(contractData.totalClaimed))} /{" "}
-        {formatNumber(formatWeiToNumber(epoch.totalAllocation))}
+        {formatNumber(
+          formatWeiToNumber(contractData.totalClaimed, tokenDecimals),
+          tokenDecimals
+        )} / {" "}
+        {formatNumber(
+          formatWeiToNumber(epoch.totalAllocation, tokenDecimals),
+          tokenDecimals
+        )}
       </Table.Cell>
       <Table.Cell
         fontSize="sm"
@@ -150,6 +176,9 @@ const AdminEpochsTableRow = ({ epoch }: AdminEpochsTableRowProps) => {
       <Table.Cell>
         <Flex gap="0.5rem" direction="column">
           {!contractData.active && <SubmitOnChainEpochModal epoch={epoch} />}
+          <RescaleEditEpochModal epoch={epoch} />
+          {!contractData.active && <ReuploadCsvModal epoch={epoch} />}
+          {!contractData.active && <DeleteEpochModal epoch={epoch} />}
           <AdminEpochActions
             epochId={epoch.id}
             isActive={contractData.active}

@@ -228,35 +228,26 @@ async function saveClaimsToDatabase(
   merkleRoot: string,
   epochId: number
 ) {
+  // Transform once
   const claimsData = claims.map((claim) => ({
-    address: claim.address, // Keep original checksum format
+    address: claim.address,
     amount: claim.amount,
-    proof: JSON.stringify(claim.proof), // Store merkle proof array as JSON string
-    merkleRoot: merkleRoot,
-    epochId: epochId,
+    proof: JSON.stringify(claim.proof),
+    merkleRoot,
+    epochId,
   }));
 
-  // Use upsert to handle potential duplicates
-  const savedClaims = await Promise.all(
-    claimsData.map((claimData) =>
-      prisma.merkleUserClaims.upsert({
-        where: {
-          address_epochId: {
-            address: claimData.address,
-            epochId: claimData.epochId,
-          },
-        },
-        update: {
-          amount: claimData.amount,
-          proof: claimData.proof,
-          epochId: claimData.epochId,
-        },
-        create: claimData,
-      })
-    )
-  );
+  // For new epochs, there should be no existing rows. To be safe, remove any pre-existing rows for this epoch
+  // (cheap even when empty), then insert in chunks to avoid parameter and memory limits.
+  await prisma.merkleUserClaims.deleteMany({ where: { epochId } });
 
-  return savedClaims;
+  const CHUNK_SIZE = 1000; // keep under Postgres param limits and function time
+  for (let i = 0; i < claimsData.length; i += CHUNK_SIZE) {
+    const chunk = claimsData.slice(i, i + CHUNK_SIZE);
+    await prisma.merkleUserClaims.createMany({ data: chunk, skipDuplicates: true });
+  }
+
+  return { inserted: claimsData.length };
 }
 
 // POST /api/merkle-tree - Create epoch and process CSV
@@ -393,7 +384,7 @@ export default async function handler(
         })),
       },
       database: {
-        savedClaimsCount: savedClaims.length,
+        savedClaimsCount: savedClaims.inserted,
       },
     });
   } catch (error) {

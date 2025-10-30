@@ -314,7 +314,7 @@ const UploadCsv = ({
             • <strong>address:</strong> Ethereum wallet address (0x format)
           </Text>
           <Text fontSize="xs" color="fg.muted" ml="1rem">
-            • <strong>amount:</strong> Token amount in wei (smallest unit)
+            • <strong>amount:</strong> Token amount in base units (no decimals). Example: USDC 1.00 → <strong>1000000</strong>
           </Text>
         </Stack>
         <Flex>
@@ -387,7 +387,7 @@ const UploadCsv = ({
                   size="sm"
                   type="number"
                   step="0.000001"
-                  placeholder="Enter human-readable amount (e.g., 1.23)"
+                  placeholder="Enter human amount (e.g., 6 for 6 USDC)"
                   {...register("totalAllocation")}
                 />
                 {selectedTokenAddress && (

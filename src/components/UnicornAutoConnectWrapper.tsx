@@ -1,7 +1,7 @@
 // components/UnicornAutoConnectWrapper.tsx
 import { useEffect, useRef } from 'react';
-import { useAccount, useConfig } from 'wagmi';
-import { UnicornAutoConnect } from '@unicorn.eth/autoconnect';
+import { useAccount, useConfig, useConnect } from 'wagmi';
+// Do not import/render UnicornAutoConnect to avoid internal config.getState calls
 
 /**
  * Wrapper for UnicornAutoConnect component
@@ -16,55 +16,24 @@ import { UnicornAutoConnect } from '@unicorn.eth/autoconnect';
 export function UnicornAutoConnectWrapper() {
   const { isConnected, address, connector } = useAccount();
   const config = useConfig();
+  const { connectAsync } = useConnect();
   const hasTriedSync = useRef(false);
 
-  const handleConnect = async (provider: any) => {
-    console.log('[UnicornAutoConnectWrapper] ✅ Thirdweb AutoConnect successful!');
-    console.log('[UnicornAutoConnectWrapper] Provider:', provider);
-    console.log('[UnicornAutoConnectWrapper] Wagmi isConnected before sync:', isConnected);
-
-    // Extract account info from the provider
-    let account: any;
-    let chainId: number = config.chains[0]?.id || 137; // Initialize with default
-
-    try {
-      account = await provider.getAccount?.();
-      console.log('[UnicornAutoConnectWrapper] Account from provider:', account);
-
-      if (account) {
-        // Get chain ID from account or use default
-        chainId = account.chain?.id || chainId;
-
-        console.log('[UnicornAutoConnectWrapper] Address:', account.address);
-        console.log('[UnicornAutoConnectWrapper] Chain ID:', chainId);
-      }
-    } catch (error) {
-      console.error('[UnicornAutoConnectWrapper] Failed to get account from provider:', error);
+  const handleConnect = async () => {
+    // If already connected, or connected to a non-unicorn wallet, skip
+    if (isConnected) {
+      console.log('[UnicornAutoConnectWrapper] Already connected, skipping');
       return;
     }
-
-    if (!account?.address) {
-      console.error('[UnicornAutoConnectWrapper] ❌ No address found in provider');
+    if (connector?.id && connector.id !== 'unicorn') {
+      console.log('[UnicornAutoConnectWrapper] Different connector active, skipping');
       return;
     }
-
-    // Store the connected wallet globally so the connector can access it
-    if (typeof window !== 'undefined') {
-      (window as any).__THIRDWEB_CONNECTED_WALLET__ = provider;
-      // Store account with the resolved chain ID
-      (window as any).__THIRDWEB_ACCOUNT__ = {
-        ...account,
-        chain: {
-          ...account.chain,
-          id: chainId, // Use the resolved chain ID
-        }
-      };
-      console.log('[UnicornAutoConnectWrapper] Stored wallet and account in global state with chain ID:', chainId);
+    // Guard: wait until wagmi config/connectors are ready
+    if (!config || !Array.isArray((config as any).connectors) || (config as any).connectors.length === 0) {
+      console.warn('[UnicornAutoConnectWrapper] wagmi config/connectors not ready yet; skipping autoconnect sync');
+      return;
     }
-
-    // Wait a bit for the wallet state to stabilize
-    await new Promise(resolve => setTimeout(resolve, 200));
-
     // Now sync with wagmi if we haven't already
     if (!hasTriedSync.current && !isConnected) {
       hasTriedSync.current = true;
@@ -73,50 +42,18 @@ export function UnicornAutoConnectWrapper() {
         console.log('[UnicornAutoConnectWrapper] Finding unicorn connector...');
         console.log('[UnicornAutoConnectWrapper] Available connectors:', config.connectors.map(c => ({ id: c.id, name: c.name })));
 
-        // Find the unicorn connector
-        const unicornConnector = config.connectors.find(c => c.id === 'unicorn');
+        // Find the unicorn connector and connect via wagmi to update state
+        const unicorn = config.connectors.find(c => c.id === 'unicorn');
 
-        if (!unicornConnector) {
+        if (!unicorn) {
           console.error('[UnicornAutoConnectWrapper] ❌ Unicorn connector not found!');
           return;
         }
 
-        console.log('[UnicornAutoConnectWrapper] Found unicorn connector');
-        console.log('[UnicornAutoConnectWrapper] Directly setting wagmi state without calling connect()...');
+        console.log('[UnicornAutoConnectWrapper] Connecting via wagmi.connectAsync to unicorn...');
+        await connectAsync({ connector: unicorn });
 
-        // DON'T call connector.connect() - it will try to reconnect the wallet
-        // Instead, directly set wagmi's internal state with the account we already have
-
-        console.log('[UnicornAutoConnectWrapper] Connection info:', {
-          accounts: [account.address],
-          chainId: chainId,
-          connector: unicornConnector.id,
-        });
-
-        // Update wagmi's internal state
-        await config.setState((state) => {
-          const newConnections = new Map(state.connections);
-          newConnections.set(unicornConnector.uid, {
-            accounts: [account.address as `0x${string}`] as readonly [`0x${string}`, ...`0x${string}`[]],
-            chainId: chainId,
-            connector: unicornConnector,
-          });
-
-          return {
-            ...state,
-            connections: newConnections,
-            current: unicornConnector.uid,
-            status: 'connected',
-          };
-        });
-
-        console.log('[UnicornAutoConnectWrapper] ✅ wagmi state updated directly');
-
-        // Wait for React to propagate the state
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        console.log('[UnicornAutoConnectWrapper] ✅ State sync complete');
-        console.log('[UnicornAutoConnectWrapper] Final isConnected should be true now');
+        console.log('[UnicornAutoConnectWrapper] ✅ wagmi connected to unicorn');
       } catch (error) {
         console.error('[UnicornAutoConnectWrapper] ❌ Failed to sync with wagmi:', error);
         console.error('[UnicornAutoConnectWrapper] Error details:', {
@@ -130,29 +67,14 @@ export function UnicornAutoConnectWrapper() {
     }
   };
 
-  const handleError = (error: Error) => {
-    console.error('[UnicornAutoConnectWrapper] ❌ Unicorn AutoConnect failed:', error);
-    console.error('[UnicornAutoConnectWrapper] Error details:', {
-      message: error.message,
-      name: error.name,
-    });
-  };
-
-  // Monitor wagmi connection state
+  // Attempt autoconnect once when connectors are ready
   useEffect(() => {
-    console.log('[UnicornAutoConnectWrapper] Wagmi state:', {
-      isConnected,
-      address,
-      connector: connector?.id,
-      connectorName: connector?.name,
-    });
-  }, [isConnected, address, connector]);
+    if (!hasTriedSync.current) {
+      handleConnect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config?.connectors?.length]);
 
-  return (
-    <UnicornAutoConnect
-      debug={true}
-      onConnect={handleConnect}
-      onError={handleError}
-    />
-  );
+  // No UI rendering; silent autoconnect attempt
+  return null;
 }

@@ -7,6 +7,7 @@ import { getAddress } from "viem";
 import ClaimsTable from "./components/ClaimsTable/ClaimsTable";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import SEO from "@/components/1_atoms/SEO/SEO";
+import Link from "next/link";
 
 // Add global styles for animations
 if (typeof document !== "undefined") {
@@ -162,11 +163,17 @@ const ClaimPage = () => {
             >
               SporkDAO Patronage Claims
             </Heading>
-            <Text fontSize={{ base: "lg", md: "xl", lg: "2xl" }} opacity={0.95} fontWeight="medium" maxW="800px" mx="auto" px={{ base: "1rem", md: 0 }}>
-              Claim your member patronage tokens from previous years at <Text as="span" color="pink.400" fontWeight="bold">ETH Denver</Text>
+            <Text as="div" fontSize={{ base: "lg", md: "xl", lg: "2xl" }} opacity={0.95} fontWeight="medium" maxW="800px" mx="auto" px={{ base: "1rem", md: 0 }}>
+            Claim SporkDAO Member Rewards:
+            <Text fontSize={{ base: "md", md: "lg", lg: "xl" }} opacity={0.95} fontWeight="medium" maxW="800px" mx="auto" px={{ base: "1rem", md: 0 }}>
+                - $SPORK tokens from previous years at ETHDenver
+            </Text>
+            <Text fontSize={{ base: "md", md: "lg", lg: "xl" }} opacity={0.95} fontWeight="medium" maxW="800px" mx="auto" px={{ base: "1rem", md: 0 }}>
+                - Patronage distributions for staked $SPORK
+            </Text>
             </Text>
             <Text fontSize={{ base: "xs", md: "sm", lg: "md" }} opacity={0.6} letterSpacing="0.1em" textTransform="uppercase">
-              Powered by SporkDAO
+            For more information about SporkDAO and Patronage claims, visit <Link href="https://sporkdao.org" target="_blank" rel="noopener noreferrer"><Text as="span" color="pink.400" fontWeight="bold">SporkDAO.org</Text></Link>
             </Text>
           </Stack>
         </Container>
@@ -312,7 +319,7 @@ const ClaimPage = () => {
                   boxShadow="0 4px 20px rgba(118, 75, 162, 0.3)"
                 >
                   <Text fontSize={{ base: "sm", md: "md" }} fontWeight="bold" color="white">
-                    {claims.length} {claims.length === 1 ? "claim" : "claims"} available
+                    {claims.length} {claims.length === 1 ? "claim" : "claims"} found
                   </Text>
                 </Box>
               </Stack>

@@ -5,10 +5,11 @@ import { ChakraProvider } from "@chakra-ui/react";
 import type { AppProps } from "next/app";
 import {
   darkTheme,
-  getDefaultConfig,
   RainbowKitProvider,
   Theme,
+  connectorsForWallets,
 } from "@rainbow-me/rainbowkit";
+import { walletConnectWallet, metaMaskWallet, injectedWallet } from "@rainbow-me/rainbowkit/wallets";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { injected, walletConnect } from "wagmi/connectors";
@@ -37,15 +38,19 @@ const createWagmiConfig = () => {
   console.log("Chain Name:",  chainName);
 
 
+    const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID || '';
+    const rkConnectors = connectorsForWallets(
+      [
+        {
+          groupName: 'Recommended',
+          wallets: [walletConnectWallet, metaMaskWallet, injectedWallet],
+        },
+      ],
+      { appName: 'SporkDAO Patronage Claims', projectId }
+    );
+
     const connectors = [
-      injected({
-        target: 'metaMask',
-        shimDisconnect: true,
-      }),
-      walletConnect({
-        projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-        showQrModal: true,
-      }),
+      ...rkConnectors,
     ];
 
     // Only add Unicorn connector if environment variables are set

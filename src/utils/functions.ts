@@ -1,6 +1,6 @@
 import { ADMIN_ADDRESSES } from "./consts";
 import { formatUnits } from "viem";
-import { polygon, base } from "wagmi/chains";
+import { polygon, base, mainnet, arbitrum, optimism, baseSepolia, sepolia } from "wagmi/chains";
 
 export const isAdmin = (address: string) => {
   return ADMIN_ADDRESSES.some(
@@ -36,10 +36,28 @@ export const formatWeiToNumber = (
 };
 
 export const getChainFromEnv = () => {
-  if (process.env.NEXT_PUBLIC_CHAIN_ID === "polygon") {
-    return polygon;
+  const key = (process.env.NEXT_PUBLIC_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN || "polygon").toLowerCase();
+  switch (key) {
+    case "polygon":
+    case "matic":
+      return polygon;
+    case "base":
+      return base;
+    case "mainnet":
+    case "ethereum":
+      return mainnet;
+    case "arbitrum":
+      return arbitrum;
+    case "optimism":
+      return optimism;
+    case "base-sepolia":
+    case "basesepolia":
+      return baseSepolia;
+    case "sepolia":
+      return sepolia;
+    default:
+      return polygon;
   }
-  return polygon;
 };
 
 export const isDeadlinePassed = (deadline: string) => {
