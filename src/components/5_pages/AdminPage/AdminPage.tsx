@@ -32,7 +32,7 @@ const AdminPage = () => {
 
   const { register, watch, reset, setValue } = useForm();
   const { address, isConnected } = useAccount();
-  const { isAdmin, isLoading: isRoleLoading } = useRoleCheck(address);
+  const { isAdmin, isCreator, isLoading: isRoleLoading } = useRoleCheck(address);
 
   const fetchEpochs = async () => {
     setLoadingEpochs(true);
@@ -52,12 +52,12 @@ const AdminPage = () => {
   };
 
   useEffect(() => {
-    if (address && isAdmin && !isRoleLoading) {
+    if (address && (isAdmin || isCreator) && !isRoleLoading) {
       fetchEpochs();
     }
-  }, [address, isAdmin, isRoleLoading]);
+  }, [address, isAdmin, isCreator, isRoleLoading]);
 
-  if (!address || !isAdmin || !isConnected || isRoleLoading) {
+  if (!address || !(isAdmin || isCreator) || !isConnected || isRoleLoading) {
     return <></>;
   }
 
