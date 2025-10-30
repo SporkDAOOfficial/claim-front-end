@@ -45,3 +45,4 @@ next-env.d.ts
 .env*.local
 yarn.lock
 *.lock
+package-lock.json
