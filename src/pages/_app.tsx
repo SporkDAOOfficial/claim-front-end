@@ -37,24 +37,31 @@ const createWagmiConfig = () => {
   console.log("Chain Name:",  chainName);  
 
   if (process.env.NODE_ENV === "development") {
-    const config = createConfig({
-      chains: [chain],
-      connectors: [
-        injected({
-          target: 'metaMask',
-          shimDisconnect: true,
-        }),
-        walletConnect({
-          projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-          showQrModal: true,
-        }),
-        // Add Unicorn connector directly in connectors array
+    const connectors = [
+      injected({
+        target: 'metaMask',
+        shimDisconnect: true,
+      }),
+      walletConnect({
+        projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
+        showQrModal: true,
+      }),
+    ];
+
+    // Only add Unicorn connector if environment variables are set
+    if (process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID) {
+      connectors.push(
         unicornConnector({
-          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID,
           factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
           defaultChain: chain.id,
-        }),
-      ],
+        })
+      );
+    }
+
+    const config = createConfig({
+      chains: [chain],
+      connectors,
       transports: {
         [chain.id]: http(),
       } as Record<number, ReturnType<typeof http>>,
@@ -71,16 +78,22 @@ const createWagmiConfig = () => {
     });
 
     // For production with getDefaultConfig, spread connectors to add unicorn
-    const config = {
-      ...baseConfig,
-      connectors: [
-        ...baseConfig.connectors,
+    const connectors = [...baseConfig.connectors];
+
+    // Only add Unicorn connector if environment variables are set
+    if (process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID) {
+      connectors.push(
         unicornConnector({
-          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID,
           factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
           defaultChain: chain.id,
         })
-      ]
+      );
+    }
+
+    const config = {
+      ...baseConfig,
+      connectors
     };
 
     return config;
