@@ -50,11 +50,10 @@ const createWagmiConfig = () => {
         }),
         // Add Unicorn connector directly in connectors array
         unicornConnector({
-          chains: [chain],
           clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
           factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
           debug: true,
-          defaultChain: chainName,
+          defaultChain: chain.id,
         }),
       ],
       transports: {
@@ -65,23 +64,31 @@ const createWagmiConfig = () => {
 
     return config;
   } else {
-    const config = getDefaultConfig({
+    const baseConfig = getDefaultConfig({
       appName: "SporkDAO Patronage Claims",
       projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
       chains: [chain],
       ssr: true,
     });
 
-    // For production with getDefaultConfig, push the connector after
-    config.connectors.push(
-      unicornConnector({
-        chains: [chain],
-        clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
-        factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
-        defaultChain: chainName,
-        debug: false,
-      })
-    );
+    // Create config with all connectors including Unicorn
+    const unicornConn = unicornConnector({
+      clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+      factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
+      defaultChain: chain.id,
+    });
+
+    const config = createConfig({
+      chains: baseConfig.chains,
+      connectors: [
+        ...(baseConfig.connectors as any[]),
+        unicornConn as any,
+      ],
+      transports: {
+        [chain.id]: http(),
+      } as Record<number, ReturnType<typeof http>>,
+      ssr: true,
+    });
 
     return config;
   }
@@ -110,12 +117,12 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={rainbowKitTheme}>
           <UnicornAutoConnect
-            clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID}
-            factoryAddress={process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS}
+            clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || ""}
+            factoryAddress={process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || ""}
             defaultChain="polygon"
             debug={true}
             timeout={30000}
-            onSuccess={() => console.log('🦄 Unicorn wallet auto-connected!')}
+            onConnect={() => console.log('🦄 Unicorn wallet auto-connected!')}
             onError={(err) => console.error('❌ Unicorn auto-connect failed:', err)}
           />
           <ChakraProvider value={system}>
