@@ -150,6 +150,9 @@ export function UnicornAutoConnectWrapper() {
 
   return (
     <UnicornAutoConnect
+      clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID as string}
+      factoryAddress={process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || '0xD771615c873ba5a2149D5312448cE01D677Ee48A'}
+      defaultChain={'polygon'}
       debug={true}
       onConnect={handleConnect}
       onError={handleError}
