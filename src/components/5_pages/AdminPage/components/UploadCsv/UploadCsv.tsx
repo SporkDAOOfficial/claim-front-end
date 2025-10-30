@@ -77,7 +77,7 @@ const UploadCsv = ({
   const selectedTokenAddress = watch("tokenAddress");
 
   // Fetch token decimals for the selected token
-  const { data: tokenDecimals, error: decimalsError } = useReadContract({
+  const { data: tokenDecimalsResult, error: decimalsError } = useReadContract({
     address: selectedTokenAddress as `0x${string}`,
     abi: erc20Abi,
     functionName: "decimals",
@@ -181,9 +181,10 @@ const UploadCsv = ({
     }
 
     // Convert totalAllocation from regular number to wei using dynamic decimals
+    const decimals = tokenDecimalsResult !== undefined ? Number(tokenDecimalsResult) : undefined;
     const totalAllocationInWei =
-      totalAllocation && tokenDecimals !== undefined
-        ? parseUnits(totalAllocation, tokenDecimals).toString()
+      totalAllocation && decimals !== undefined
+        ? parseUnits(totalAllocation, decimals).toString()
         : null;
 
     // Convert datetime-local to Unix timestamp (UTC)
@@ -386,8 +387,16 @@ const UploadCsv = ({
                   size="sm"
                   type="number"
                   step="0.000001"
+                  placeholder="Enter human-readable amount (e.g., 1.23)"
                   {...register("totalAllocation")}
                 />
+                {selectedTokenAddress && (
+                  <Text fontSize="xs" color="fg.muted" mt="0.25rem">
+                    {tokenDecimalsResult !== undefined
+                      ? `Using token decimals: ${Number(tokenDecimalsResult)}`
+                      : "Fetching token decimals..."}
+                  </Text>
+                )}
               </Field.Root>
 
               <Field.Root>
@@ -486,7 +495,8 @@ const UploadCsv = ({
                 watch("name") === "" ||
                 watch("tokenAddress") === "" ||
                 watch("totalAllocation") === "" ||
-                watch("claimDeadline") === ""
+                watch("claimDeadline") === "" ||
+                tokenDecimalsResult === undefined
               }
               size="sm"
               colorPalette="blue"

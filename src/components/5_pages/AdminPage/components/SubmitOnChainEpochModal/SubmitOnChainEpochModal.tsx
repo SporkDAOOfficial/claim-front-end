@@ -27,6 +27,7 @@ interface SubmitOnChainEpochModalProps {
 const SubmitOnChainEpochModal = ({ epoch }: SubmitOnChainEpochModalProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { address } = useAccount();
+  const [tokenDecimals, setTokenDecimals] = useState<number>(18);
 
   // Write contract hook for approval
   const {
@@ -67,6 +68,20 @@ const SubmitOnChainEpochModal = ({ epoch }: SubmitOnChainEpochModalProps) => {
       enabled: !!(address && isOpen && epoch.tokenAddress),
     },
   });
+
+  // Read token decimals for display formatting
+  const { data: decimalsResult } = useReadContract({
+    address: epoch.tokenAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: "decimals",
+    query: { enabled: !!epoch.tokenAddress },
+  });
+
+  useEffect(() => {
+    if (decimalsResult !== undefined) {
+      setTokenDecimals(Number(decimalsResult));
+    }
+  }, [decimalsResult]);
 
   // Refetch allowance when modal opens or when approval is confirmed
   useEffect(() => {
@@ -172,7 +187,10 @@ const SubmitOnChainEpochModal = ({ epoch }: SubmitOnChainEpochModalProps) => {
                   <Stack>
                     <Text>Total Allocation:</Text>
                     <Text fontSize="xs">
-                      {formatNumber(formatWeiToNumber(epoch?.totalAllocation))}
+                      {formatNumber(
+                        formatWeiToNumber(epoch?.totalAllocation, tokenDecimals),
+                        tokenDecimals
+                      )}
                     </Text>
                   </Stack>
                   <Stack>
