@@ -36,7 +36,7 @@ const createWagmiConfig = () => {
   const chainName = getChainName ();
   console.log("Chain Name:",  chainName);  
 
-  if (process.env.NODE_ENV === "development") {
+
     const connectors = [
       injected({
         target: 'metaMask',
@@ -69,35 +69,7 @@ const createWagmiConfig = () => {
     });
     
     return config;
-  } else {
-    const baseConfig = getDefaultConfig({
-      appName: "SporkDAO Patronage Claims",
-      projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
-      chains: [chain],
-      ssr: true,
-    });
-
-    // For production with getDefaultConfig, spread connectors to add unicorn
-    const connectors = [...baseConfig.connectors];
-
-    // Only add Unicorn connector if environment variables are set
-    if (process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID) {
-      connectors.push(
-        unicornConnector({
-          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID,
-          factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
-          defaultChain: chain.id,
-        })
-      );
-    }
-
-    const config = {
-      ...baseConfig,
-      connectors
-    };
-
-    return config;
-  }
+  
 };
 
 const queryClient = new QueryClient({
