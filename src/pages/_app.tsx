@@ -65,24 +65,28 @@ const createWagmiConfig = () => {
     
     return config;
   } else {
-    const config = getDefaultConfig({
+    const baseConfig = getDefaultConfig({
       appName: "SporkDAO Patronage Claims",
       projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID || "",
       chains: [chain],
       ssr: true,
     });
-    
-    // For production with getDefaultConfig, push the connector after
-    config.connectors.push(
-      unicornConnector({
-        chains: [chain],
-        clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
-        factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
-        defaultChain: chain.id,
-        debug: false,
-      })
-    );
-    
+
+    // For production with getDefaultConfig, spread connectors to add unicorn
+    const config = {
+      ...baseConfig,
+      connectors: [
+        ...baseConfig.connectors,
+        unicornConnector({
+          chains: [chain],
+          clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
+          factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
+          defaultChain: chain.id,
+          debug: false,
+        })
+      ]
+    };
+
     return config;
   }
 };

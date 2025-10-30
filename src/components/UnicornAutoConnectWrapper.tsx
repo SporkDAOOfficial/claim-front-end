@@ -24,23 +24,16 @@ export function UnicornAutoConnectWrapper() {
     console.log('[UnicornAutoConnectWrapper] Wagmi isConnected before sync:', isConnected);
 
     // Extract account info from the provider
-    let account;
-    let chainId;
+    let account: any;
+    let chainId: number = config.chains[0]?.id || 137; // Initialize with default
 
     try {
       account = await provider.getAccount?.();
       console.log('[UnicornAutoConnectWrapper] Account from provider:', account);
 
       if (account) {
-        // Get chain ID from account or from URL/config
-        chainId = account.chain?.id;
-
-        // If no chain ID from account, try to get from wagmi config
-        if (!chainId) {
-          const configChains = config.chains;
-          chainId = configChains && configChains.length > 0 ? configChains[0].id : 137; // Default to Polygon
-          console.log('[UnicornAutoConnectWrapper] No chain in account, using default:', chainId);
-        }
+        // Get chain ID from account or use default
+        chainId = account.chain?.id || chainId;
 
         console.log('[UnicornAutoConnectWrapper] Address:', account.address);
         console.log('[UnicornAutoConnectWrapper] Chain ID:', chainId);
@@ -94,18 +87,20 @@ export function UnicornAutoConnectWrapper() {
         // DON'T call connector.connect() - it will try to reconnect the wallet
         // Instead, directly set wagmi's internal state with the account we already have
 
-        const connectionInfo = {
-          accounts: [account.address as `0x${string}`],
+        console.log('[UnicornAutoConnectWrapper] Connection info:', {
+          accounts: [account.address],
           chainId: chainId,
-          connector: unicornConnector,
-        };
-
-        console.log('[UnicornAutoConnectWrapper] Connection info:', connectionInfo);
+          connector: unicornConnector.id,
+        });
 
         // Update wagmi's internal state
         await config.setState((state) => {
           const newConnections = new Map(state.connections);
-          newConnections.set(unicornConnector.uid, connectionInfo);
+          newConnections.set(unicornConnector.uid, {
+            accounts: [account.address as `0x${string}`] as readonly [`0x${string}`, ...`0x${string}`[]],
+            chainId: chainId,
+            connector: unicornConnector,
+          });
 
           return {
             ...state,
