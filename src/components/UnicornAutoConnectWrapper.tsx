@@ -1,6 +1,7 @@
 // components/UnicornAutoConnectWrapper.tsx
 import { useEffect, useRef } from 'react';
 import { useAccount, useConfig, useConnect } from 'wagmi';
+import { isUnicornEnvironment, getUnicornAuthCookie } from '@unicorn.eth/autoconnect';
 // Do not import/render UnicornAutoConnect to avoid internal config.getState calls
 
 /**
@@ -32,6 +33,13 @@ export function UnicornAutoConnectWrapper() {
     // Guard: wait until wagmi config/connectors are ready
     if (!config || !Array.isArray((config as any).connectors) || (config as any).connectors.length === 0) {
       console.warn('[UnicornAutoConnectWrapper] wagmi config/connectors not ready yet; skipping autoconnect sync');
+      return;
+    }
+
+    // Only attempt unicorn autoconnect if in Unicorn environment or auth cookie is present
+    const inUnicorn = typeof window !== 'undefined' && (isUnicornEnvironment?.() || !!getUnicornAuthCookie?.());
+    if (!inUnicorn) {
+      console.log('[UnicornAutoConnectWrapper] Not in Unicorn environment; skipping');
       return;
     }
     // Now sync with wagmi if we haven't already

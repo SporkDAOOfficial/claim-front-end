@@ -45,6 +45,15 @@ const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
     query: { enabled: !!address },
   });
 
+  // Read on-chain epoch data to determine active/deadline regardless of DB state
+  const { data: epochOnChain } = useReadContract({
+    address: memContractAddress as `0x${string}`,
+    abi: memAbi,
+    functionName: "getEpoch",
+    args: [BigInt(claim.epochId)],
+    query: { enabled: true },
+  });
+
   // Update isClaimed state from smart contract
   useEffect(() => {
     if (hasClaimedResult !== undefined) {
@@ -52,13 +61,21 @@ const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
     }
   }, [hasClaimedResult, claim.epochId]);
 
-  // Check if user can claim
+  // Check if user can claim (prefer on-chain active/deadline)
   const canClaim = () => {
-    return claim.epoch.isActive && !isDeadlinePassed && !isClaimed && address;
+    const activeOnChain = epochOnChain ? (epochOnChain as readonly any[])[5] === true : claim.epoch.isActive;
+    const deadlineSecOnChain = epochOnChain ? Number((epochOnChain as readonly any[])[2]) : undefined;
+    const deadlinePassedOnChain = deadlineSecOnChain ? Date.now() > deadlineSecOnChain * 1000 : isDeadlinePassed;
+    const hasAddress = Boolean(address);
+    return Boolean(activeOnChain && !deadlinePassedOnChain && !isClaimed && hasAddress);
   };
 
   // Handle claim transaction
   const handleClaim = async () => {
+    if (!address) {
+      toaster.create({ title: "Connect your wallet to claim", type: "warning" });
+      return;
+    }
     if (!canClaim()) return;
 
     // Use the stored merkle proof array
@@ -71,10 +88,24 @@ const ClaimEpoch = ({ claim, disabled, isDeadlinePassed }: ClaimEpochProps) => {
       args: [BigInt(claim.epochId), BigInt(claim.amount), merkleProof],
     };
 
-    if (wallet.isUnicorn) {
-      await wallet.unicornWallet.sendTransaction(payload);
-    } else {
-      writeContract(payload);
+    try {
+      let useUnicorn = false;
+      if (wallet?.isUnicorn && wallet.unicornWallet?.getAccount) {
+        try {
+          const acc = await wallet.unicornWallet.getAccount();
+          useUnicorn = Boolean(acc?.address);
+        } catch {
+          useUnicorn = false;
+        }
+      }
+
+      if (useUnicorn) {
+        await wallet.unicornWallet!.sendTransaction(payload);
+      } else {
+        writeContract(payload);
+      }
+    } catch (e) {
+      toaster.create({ title: "Unable to send transaction. Please reconnect and try again.", type: "error" });
     }
   };
 
