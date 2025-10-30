@@ -35,6 +35,15 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
     query: { enabled: !!address },
   });
 
+  // Read on-chain epoch tuple to display true status (not DB flag)
+  const { data: epochOnChain } = useReadContract({
+    address: memContractAddress as `0x${string}`,
+    abi: memAbi,
+    functionName: "getEpoch",
+    args: [BigInt(claim.epochId)],
+    query: { enabled: true },
+  });
+
   // Fetch token decimals
   const { data: decimalsResult } = useReadContract({
     address: claim.epoch.tokenAddress as `0x${string}`,
@@ -77,27 +86,34 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
       <Table.Cell
         fontSize="sm"
         color={
-          isDeadlinePassed(claim.epoch.claimDeadline) ? "orange.400" : "gray.200"
+          (() => {
+            const deadline = epochOnChain ? Number((epochOnChain as readonly any[])[2]) : parseInt(claim.epoch.claimDeadline);
+            return isDeadlinePassed(String(deadline)) ? "orange.400" : "gray.200";
+          })()
         }
       >
-        {new Date(parseInt(claim.epoch.claimDeadline) * 1000).toLocaleString()}
+        {new Date(
+          (epochOnChain ? Number((epochOnChain as readonly any[])[2]) : parseInt(claim.epoch.claimDeadline)) * 1000
+        ).toLocaleString()}
       </Table.Cell>
       <Table.Cell>
         <Text
           color={
-            claim.epoch.isActive
-              ? isDeadlinePassed(claim.epoch.claimDeadline)
-                ? "orange.400"
-                : "green.400"
-              : "orange.400"
+            (() => {
+              const active = epochOnChain ? (epochOnChain as readonly any[])[5] === true : claim.epoch.isActive;
+              const deadline = epochOnChain ? Number((epochOnChain as readonly any[])[2]) : parseInt(claim.epoch.claimDeadline);
+              const expired = isDeadlinePassed(String(deadline));
+              return active ? (expired ? "orange.400" : "green.400") : "orange.400";
+            })()
           }
           fontSize="sm"
         >
-          {claim.epoch.isActive
-            ? isDeadlinePassed(claim.epoch.claimDeadline)
-              ? "Expired"
-              : "Active"
-            : "Inactive"}
+          {(() => {
+            const active = epochOnChain ? (epochOnChain as readonly any[])[5] === true : claim.epoch.isActive;
+            const deadline = epochOnChain ? Number((epochOnChain as readonly any[])[2]) : parseInt(claim.epoch.claimDeadline);
+            const expired = isDeadlinePassed(String(deadline));
+            return active ? (expired ? "Expired" : "Active") : "Inactive";
+          })()}
         </Text>
       </Table.Cell>
       <Table.Cell>
