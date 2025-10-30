@@ -50,10 +50,8 @@ const createWagmiConfig = () => {
         }),
         // Add Unicorn connector directly in connectors array
         unicornConnector({
-          chains: [chain],
           clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
           factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
-          debug: true,
           defaultChain: chain.id,
         }),
       ],
@@ -78,11 +76,9 @@ const createWagmiConfig = () => {
       connectors: [
         ...baseConfig.connectors,
         unicornConnector({
-          chains: [chain],
           clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "",
           factoryAddress: process.env.NEXT_PUBLIC_THIRDWEB_FACTORY_ADDRESS || "0xD771615c873ba5a2149D5312448cE01D677Ee48A",
           defaultChain: chain.id,
-          debug: false,
         })
       ]
     };
