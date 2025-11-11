@@ -13,17 +13,17 @@ import { walletConnectWallet, metaMaskWallet, injectedWallet } from "@rainbow-me
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { injected, walletConnect } from "wagmi/connectors";
-import { UnicornAutoConnect, unicornConnector } from "@unicorn.eth/autoconnect";
+import { unicornConnector } from "@unicorn.eth/autoconnect";
 import { useConnect } from 'wagmi';
 import "@rainbow-me/rainbowkit/styles.css";
 import { getChainFromEnv } from "@/utils/functions";
 import { Analytics } from "@vercel/analytics/next";
 import dynamic from 'next/dynamic';
 
-// Import UnicornAutoConnect dynamically to avoid SSR issues
-const UnicornAutoConnectClient = dynamic(
-  () => import("@unicorn.eth/autoconnect").then(mod => ({
-    default: mod.UnicornAutoConnect
+// Dynamically import custom wrapper to avoid config.getState bug in autoconnect
+const UnicornAutoConnectWrapper = dynamic(
+  () => import('@/components/UnicornAutoConnectWrapper').then(mod => ({
+    default: mod.UnicornAutoConnectWrapper
   })),
   { ssr: false }
 );
@@ -109,11 +109,8 @@ export default function App({ Component, pageProps }: AppProps) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={rainbowKitTheme}>
-          <UnicornAutoConnectClient
-            debug={true}
-            onConnect={(wallet) => console.log('✅ Unicorn wallet connected:', wallet)}
-            onError={(error) => console.error('❌ Unicorn connection error:', error)}
-          />
+          {/* Custom wrapper to avoid config.getState bug in @unicorn.eth/autoconnect */}
+          <UnicornAutoConnectWrapper />
           <ChakraProvider value={system}>
             <ColorModeProvider>
               <AppLayout>

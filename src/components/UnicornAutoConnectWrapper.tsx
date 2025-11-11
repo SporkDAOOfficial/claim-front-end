@@ -1,8 +1,20 @@
 // components/UnicornAutoConnectWrapper.tsx
 import { useEffect, useRef } from 'react';
 import { useAccount, useConfig, useConnect } from 'wagmi';
-import { isUnicornEnvironment, getUnicornAuthCookie } from '@unicorn.eth/autoconnect';
 // Do not import/render UnicornAutoConnect to avoid internal config.getState calls
+
+// Helper functions to detect Unicorn environment
+const isUnicornEnvironment = () => {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.has('walletId') && params.get('walletId') === 'inApp';
+};
+
+const getUnicornAuthCookie = () => {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('authCookie');
+};
 
 /**
  * Wrapper for UnicornAutoConnect component
@@ -37,7 +49,7 @@ export function UnicornAutoConnectWrapper() {
     }
 
     // Only attempt unicorn autoconnect if in Unicorn environment or auth cookie is present
-    const inUnicorn = typeof window !== 'undefined' && (isUnicornEnvironment?.() || !!getUnicornAuthCookie?.());
+    const inUnicorn = typeof window !== 'undefined' && (isUnicornEnvironment() || !!getUnicornAuthCookie());
     if (!inUnicorn) {
       console.log('[UnicornAutoConnectWrapper] Not in Unicorn environment; skipping');
       return;
