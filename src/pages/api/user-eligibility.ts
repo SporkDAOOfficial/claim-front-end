@@ -39,13 +39,14 @@ export default async function handler(
       });
     }
 
-    // Check if user has a claim for this epoch
-    const userClaim = await prisma.merkleUserClaims.findUnique({
+    // Check if user has a claim for this epoch (case-insensitive)
+    const userClaim = await prisma.merkleUserClaims.findFirst({
       where: {
-        address_epochId: {
-          address: address as string,
-          epochId: parseInt(epochId as string),
+        address: {
+          equals: address as string,
+          mode: 'insensitive',
         },
+        epochId: parseInt(epochId as string),
       },
     });
 

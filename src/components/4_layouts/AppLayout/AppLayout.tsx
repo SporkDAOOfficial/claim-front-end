@@ -24,7 +24,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, seo }) => {
       <Theme appearance={colorMode} suppressHydrationWarning>
         <Box
           minHeight="100vh"
-          background="linear-gradient(180deg, #0a0a0f 0%, #1a0a1f 100%)"
+          background={
+            colorMode === "dark"
+              ? "linear-gradient(180deg, #0a0a0f 0%, #1a0a1f 100%)"
+              : "linear-gradient(180deg, #f5f5f5 0%, #e8e8f0 100%)"
+          }
           position="relative"
           _before={{
             content: '""',
@@ -33,10 +37,17 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, seo }) => {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: `
+            backgroundImage:
+              colorMode === "dark"
+                ? `
               radial-gradient(circle at 20% 50%, rgba(118, 75, 162, 0.08) 0%, transparent 50%),
               radial-gradient(circle at 80% 80%, rgba(102, 126, 234, 0.06) 0%, transparent 50%),
               radial-gradient(circle at 50% 20%, rgba(240, 147, 251, 0.05) 0%, transparent 50%)
+            `
+                : `
+              radial-gradient(circle at 20% 50%, rgba(118, 75, 162, 0.03) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(102, 126, 234, 0.02) 0%, transparent 50%),
+              radial-gradient(circle at 50% 20%, rgba(240, 147, 251, 0.02) 0%, transparent 50%)
             `,
             pointerEvents: "none",
             zIndex: 0,

@@ -1,4 +1,4 @@
-import { ColorModeButton } from "@/components/ui/color-mode";
+import { ColorModeButton, useColorMode } from "@/components/ui/color-mode";
 import { Stack, Text, Image, Box } from "@chakra-ui/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -10,13 +10,16 @@ const NavBar = () => {
   const router = useRouter();
   const { address } = useAccount();
   const { isAdmin, isLoading } = useRoleCheck(address);
+  const { colorMode } = useColorMode();
 
   return (
     <Box
       w="100%"
       borderBottom="1px solid"
-      borderColor="purple.900"
-      background="rgba(0, 0, 0, 0.5)"
+      borderColor={colorMode === "dark" ? "purple.900" : "purple.200"}
+      background={
+        colorMode === "dark" ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.8)"
+      }
       backdropFilter="blur(10px)"
     >
       <Stack
@@ -31,11 +34,11 @@ const NavBar = () => {
       >
         <Stack direction="row" alignItems="center" gap={{ base: "1rem", md: "2rem" }}>
           <a href="https://ethdenver.com" target="_blank" rel="noopener noreferrer">
-            <Image 
+            <Image
               src="/images/hero/ethdenver_logo.svg"
               alt="ETHDenver"
               height={{ base: "32px", md: "40px" }}
-              filter="brightness(1.2)"
+              filter={colorMode === "dark" ? "brightness(1.2)" : "brightness(0.9)"}
             />
           </a>
           <Link href="/">
@@ -62,12 +65,20 @@ const NavBar = () => {
           {address && !isLoading && isAdmin && (
             <Link href="/admin">
               <Text
-                _hover={{ 
+                _hover={{
                   textDecoration: "underline",
                   opacity: 0.8
                 }}
                 fontWeight="bold"
-                color={router.pathname === "/admin" ? "pink.400" : "white"}
+                color={
+                  router.pathname === "/admin"
+                    ? colorMode === "dark"
+                      ? "pink.400"
+                      : "pink.600"
+                    : colorMode === "dark"
+                    ? "white"
+                    : "gray.800"
+                }
                 fontSize="sm"
                 letterSpacing="0.05em"
                 textTransform="uppercase"
