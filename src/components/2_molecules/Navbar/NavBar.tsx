@@ -1,4 +1,4 @@
-import { ColorModeButton, useColorMode } from "@/components/ui/color-mode";
+import { useColorMode } from "@/components/ui/color-mode";
 import { Stack, Text, Image, Box } from "@chakra-ui/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -88,7 +88,6 @@ const NavBar = () => {
             </Link>
           )}
           <ConnectButton />
-          <ColorModeButton />
         </Stack>
       </Stack>
     </Box>

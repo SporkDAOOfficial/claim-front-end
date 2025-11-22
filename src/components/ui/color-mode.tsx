@@ -24,15 +24,11 @@ export interface UseColorModeReturn {
 }
 
 export function useColorMode(): UseColorModeReturn {
-  const { resolvedTheme, setTheme, forcedTheme } = useTheme();
-  const colorMode = forcedTheme || resolvedTheme;
-  const toggleColorMode = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
+  // Always return dark mode
   return {
-    colorMode: colorMode as ColorMode,
-    setColorMode: setTheme,
-    toggleColorMode,
+    colorMode: "dark" as ColorMode,
+    setColorMode: () => {}, // No-op since we're forcing dark mode
+    toggleColorMode: () => {}, // No-op since we're forcing dark mode
   };
 }
 

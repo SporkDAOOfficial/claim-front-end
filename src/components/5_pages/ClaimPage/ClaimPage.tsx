@@ -71,8 +71,8 @@ const ClaimPage = () => {
         backgroundSize="cover"
         backgroundPosition="center"
         backgroundRepeat="no-repeat"
-        py={{ base: "4rem", md: "6rem", lg: "10rem" }}
-        mb={{ base: "2rem", md: "3rem", lg: "4rem" }}
+        py={{ base: "3.2rem", md: "4.8rem", lg: "8rem" }}
+        mb={{ base: "1.6rem", md: "2.4rem", lg: "3.2rem" }}
         mx={{
           base: "-1rem",
           md: "-1.5rem",

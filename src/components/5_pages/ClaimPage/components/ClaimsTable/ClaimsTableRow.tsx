@@ -92,9 +92,17 @@ const ClaimsTableRow = ({ claim }: ClaimsTableRowProps) => {
           })()
         }
       >
-        {new Date(
-          (epochOnChain ? Number((epochOnChain as readonly any[])[2]) : parseInt(claim.epoch.claimDeadline)) * 1000
-        ).toLocaleString()}
+        {(() => {
+          const deadline = epochOnChain ? Number((epochOnChain as readonly any[])[2]) : parseInt(claim.epoch.claimDeadline);
+          if (isNaN(deadline) || deadline <= 0) {
+            return "Pending";
+          }
+          const date = new Date(deadline * 1000);
+          if (isNaN(date.getTime())) {
+            return "Pending";
+          }
+          return date.toLocaleString();
+        })()}
       </Table.Cell>
       <Table.Cell>
         <Text
