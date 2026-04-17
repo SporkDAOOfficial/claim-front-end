@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://polygon-mainnet.g.alchemy.com wss://*.walletconnect.org wss://*.walletconnect.com https://*.walletconnect.com https://rpc.walletconnect.com https://explorer-api.walletconnect.com",
+      "connect-src 'self' https://polygon-mainnet.g.alchemy.com https://*.alchemy.com wss://*.walletconnect.org wss://*.walletconnect.com https://*.walletconnect.com https://*.walletconnect.org https://rpc.walletconnect.com https://explorer-api.walletconnect.com https://pulse.walletconnect.org https://api.web3modal.org",
       "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org",
       "frame-ancestors 'none'",
       "object-src 'none'",
