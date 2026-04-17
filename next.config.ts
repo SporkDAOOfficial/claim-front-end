@@ -1,17 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    // Enable experimental features to handle module loading warnings
     esmExternals: 'loose',
   },
   webpack: (config, { isServer }) => {
-    // Handle module resolution issues
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
@@ -19,8 +16,6 @@ const nextConfig: NextConfig = {
       tls: false,
       '@react-native-async-storage/async-storage': false,
     };
-
-    // Ignore warnings
     config.ignoreWarnings = [
       {
         module: /node_modules\/@metamask\/sdk/,
@@ -33,15 +28,64 @@ const nextConfig: NextConfig = {
       /Critical dependency: the request of a dependency is an expression/,
       /CommonJS module.*is loading ES Module/,
     ];
-
     return config;
   },
-  // Suppress specific warnings
   onDemandEntries: {
-    // period (in ms) where the server will keep pages in the buffer
     maxInactiveAge: 25 * 1000,
-    // number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 2,
+  },
+
+  async headers() {
+    const cspDirectives = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://polygon-mainnet.g.alchemy.com wss://*.walletconnect.org wss://*.walletconnect.com https://*.walletconnect.com https://rpc.walletconnect.com https://explorer-api.walletconnect.com",
+      "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join('; ');
+
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: cspDirectives,
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+        ],
+      },
+    ];
   },
 };
 
