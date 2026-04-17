@@ -16,7 +16,7 @@ import { injected, walletConnect } from "wagmi/connectors";
 import { unicornConnector } from "@unicorn.eth/autoconnect";
 import { useConnect } from 'wagmi';
 import "@rainbow-me/rainbowkit/styles.css";
-import { getChainFromEnv } from "@/utils/functions";
+import { getChainFromEnv, requirePublicRpcUrl } from "@/utils/functions";
 import { Analytics } from "@vercel/analytics/next";
 import dynamic from 'next/dynamic';
 
@@ -32,8 +32,8 @@ const UnicornAutoConnectWrapper = dynamic(
 
 // Create config function that gets called at runtime
 const chain = getChainFromEnv();
-console.log("Chain:",  chain);
 const createWagmiConfig = () => {
+    const rpcUrl = requirePublicRpcUrl();
     // Map chain ID to Thirdweb chain name
   const getChainName = () => {
     const chainMap: Record<number, string> = {
@@ -44,7 +44,6 @@ const createWagmiConfig = () => {
     return chainMap[chain.id] || 'polygon';
   };
   const chainName = getChainName ();
-  console.log("Chain Name:",  chainName);
 
 
     const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID || '';
@@ -77,7 +76,7 @@ const createWagmiConfig = () => {
       chains: [chain],
       connectors,
       transports: {
-        [chain.id]: http(),
+        [chain.id]: http(rpcUrl),
       } as Record<number, ReturnType<typeof http>>,
       ssr: true,
     });

@@ -2,6 +2,7 @@ import { createPublicClient, http } from "viem";
 import { base, polygon } from "viem/chains";
 import { memAbi } from "@/web3/abis/mem_abi";
 import { memContractAddress } from "@/web3/contractAddresses";
+import { requirePublicRpcUrl } from "@/utils/functions";
 
 /**
  * Get the chain from environment variables
@@ -18,9 +19,10 @@ function getChain() {
  */
 function createClient() {
   const chain = getChain();
+  const rpcUrl = requirePublicRpcUrl();
   return createPublicClient({
     chain,
-    transport: http(),
+    transport: http(rpcUrl),
   });
 }
 

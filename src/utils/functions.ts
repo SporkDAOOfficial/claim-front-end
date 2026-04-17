@@ -1,6 +1,17 @@
 import { ADMIN_ADDRESSES } from "./consts";
 import { formatUnits } from "viem";
 import { polygon, base, mainnet, arbitrum, optimism, baseSepolia, sepolia } from "wagmi/chains";
+import type { Chain } from "viem";
+
+export const requirePublicRpcUrl = () => {
+  const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL?.trim();
+  if (!rpcUrl) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_RPC_URL. Define it in .env (or .env.local) and restart dev server."
+    );
+  }
+  return rpcUrl;
+};
 
 export const isAdmin = (address: string) => {
   return ADMIN_ADDRESSES.some(
@@ -36,6 +47,18 @@ export const formatWeiToNumber = (
 };
 
 export const getChainFromEnv = () => {
+  const rpcUrl = requirePublicRpcUrl();
+  const withCustomRpc = (chain: Chain): Chain => {
+    return {
+      ...chain,
+      rpcUrls: {
+        ...chain.rpcUrls,
+        default: { http: [rpcUrl] },
+        public: { http: [rpcUrl] },
+      },
+    };
+  };
+
   const key = (process.env.NEXT_PUBLIC_CHAIN_ID || process.env.NEXT_PUBLIC_CHAIN || "polygon").toLowerCase();
   switch (key) {
     case "polygon":
